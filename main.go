@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+    "fmt"
+    "cardist/scanner"
+)
 
 func main() {
-    fmt.Println("Holy inters")
+    code := "({\n+ - = \n})"
+    scn := scanner.NewScanner(code)
+    tokens := scn.ScanTokens()
+
+    for _, tok := range tokens {
+        fmt.Println(tok)
+    }
 }

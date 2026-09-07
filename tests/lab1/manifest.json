@@ -1,0 +1,6 @@
+{
+    "ext": ".crd",
+    "flag": "--tokenize",
+    "mode": "sidecar"
+  }
+  
