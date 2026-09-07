@@ -1,29 +1,30 @@
 package scanner
 
-import "fmt" 
+import (
+	"fmt"
+	"os"
+)
 
 type TokenType int
 
-
-// 
-const ( 
-	TOKEN_LEFT_PAREN 	TokenType = iota //iota so each const var gets assigned a sequential number
-	TOKEN_RIGHT_PAREN 
-	TOKEN_LEFT_BRACE // {
+const (
+	TOKEN_LEFT_PAREN TokenType = iota //iota so each const var gets assigned a sequential number
+	TOKEN_RIGHT_PAREN
+	TOKEN_LEFT_BRACE  // {
 	TOKEN_RIGHT_BRACE // }
-	TOKEN_PLUS // +
-	TOKEN_MINUS // -
-	TOKEN_STAR // * 
-	TOKEN_EQUAL // =
-	TOKEN_GREATER // >
-	TOKEN_LESSER // < 
-	TOKEN_COMMA // ,
-	TOKEN_COLON // :
-	TOKEN_SEMI_COLON // ;
+	TOKEN_PLUS        // +
+	TOKEN_MINUS       // -
+	TOKEN_STAR        // *
+	TOKEN_EQUAL       // =
+	TOKEN_GREATER     // >
+	TOKEN_LESSER      // <
+	TOKEN_COMMA       // ,
+	TOKEN_COLON       // :
+	TOKEN_SEMI_COLON  // ;
 	TOKEN_EOF
 )
 
-func (t TokenType) String() string{
+func (t TokenType) String() string {
 	switch t {
 	case TOKEN_LEFT_PAREN:
 		return "LEFT_PAREN"
@@ -35,7 +36,7 @@ func (t TokenType) String() string{
 		return "RIGHT_BRACE"
 	case TOKEN_PLUS:
 		return "PLUS"
-	case TOKEN_MINUS: 
+	case TOKEN_MINUS:
 		return "MINUS"
 	case TOKEN_STAR:
 		return "STAR"
@@ -45,7 +46,7 @@ func (t TokenType) String() string{
 		return "GREATER"
 	case TOKEN_LESSER:
 		return "LESSER"
-	case TOKEN_COMMA: 
+	case TOKEN_COMMA:
 		return "COMMA"
 	case TOKEN_COLON:
 		return "COLON"
@@ -53,39 +54,55 @@ func (t TokenType) String() string{
 		return "SEMI_COLON"
 	case TOKEN_EOF:
 		return "EOF"
-	default: 
+	default:
 		return "UNKNOWN"
 	}
 }
+
 type Token struct {
-	Type	TokenType
-	Lexeme	string
-	Literal	any
-	Line	int
+	Type    TokenType
+	Lexeme  string
+	Literal any
+	Line    int
 }
-type Scanner struct{
-	source	string
-	tokens	[]Token //tokens collected
-	start	int
-	current	int
-	line	int
+type Scanner struct {
+	source   string
+	tokens   []Token //tokens collected
+	start    int
+	current  int
+	line     int
+	hadError bool
 }
 
-func (t Token) String() string{
+func (s *Scanner) ErrorFound() bool { // Reports whether any error was recorded during scanning.
+	return s.hadError // Used this to decide the exit code (0 vs 65).
+}
+
+/*
+	reportError prints a diagnostic to stderr and marks the scan as failed.
+
+It does not stop scanning, so later errors in the same file can still be reported in one pass.
+*/
+func (s *Scanner) reportError(line int, message string) {
+	fmt.Fprintf(os.Stderr, "[line %d] Error: %s\n", line, message)
+	s.hadError = true
+}
+
+func (t Token) String() string {
 	literalStr := "null"
 	if t.Literal != nil { //will return as it is if it has value
 		literalStr = fmt.Sprintf("%v", t.Literal)
 	}
-	return fmt.Sprintf("Token(type=%s, lexeme=%s, literal=%s, line=%d)", t.Type, t.Lexeme, literalStr, t.Line)	
+	return fmt.Sprintf("Token(type=%s, lexeme=%s, literal=%s, line=%d)", t.Type, t.Lexeme, literalStr, t.Line)
 }
 
 func NewScanner(source string) *Scanner {
 	return &Scanner{
-		source:		source,
-		tokens:		[]Token{},
-		start:		0,
-		current:	0,
-		line:		1,
+		source:  source,
+		tokens:  []Token{},
+		start:   0,
+		current: 0,
+		line:    1,
 	}
 }
 
@@ -95,7 +112,7 @@ func (s *Scanner) isAtEnd() bool { //will return true if current reaches end of 
 
 func (s *Scanner) advance() byte { //stepping forward by 1 whilst returning character at current
 	c := s.source[s.current]
-	s.current++ 
+	s.current++
 	return c
 }
 
@@ -106,25 +123,25 @@ func (s *Scanner) addToken(t TokenType) { //creates token type and appends to to
 func (s *Scanner) addTokenWithLiteral(t TokenType, literal any) {
 	lexeme := s.source[s.start:s.current]
 	s.tokens = append(s.tokens, Token{
-		Type:		t,
-		Lexeme:		lexeme,
-		Literal:	literal, 
-		Line:		s.line,
+		Type:    t,
+		Lexeme:  lexeme,
+		Literal: literal,
+		Line:    s.line,
 	})
 }
 
-//Main scanner feature
+// Main scanner feature
 func (s *Scanner) ScanTokens() []Token {
 	for !s.isAtEnd() {
 		s.start = s.current
 		s.scanToken()
 	}
 
-	s.tokens = append(s.tokens, Token{ //appending eof 
-		Type:		TOKEN_EOF,
-		Lexeme:		"",
-		Literal:	nil,
-		Line:		s.line,
+	s.tokens = append(s.tokens, Token{ //appending eof
+		Type:    TOKEN_EOF,
+		Lexeme:  "",
+		Literal: nil,
+		Line:    s.line,
 	})
 	return s.tokens
 }
@@ -158,12 +175,12 @@ func (s *Scanner) scanToken() {
 		s.addToken(TOKEN_COLON)
 	case ';':
 		s.addToken(TOKEN_SEMI_COLON)
-	
+
 	case ' ', '\r', '\t':
 		break
 	case '\n':
-		s.line++
-	default: 
-		fmt.Printf("[line %d] Error: Unexpected character: %c/n", s.line, c)
+		s.line++ //increment line count for error reporting
+	default:
+		s.reportError(s.line, fmt.Sprintf("Unexpected character: %c", c)) //report error but keep scanning, unincluded
 	}
 }
