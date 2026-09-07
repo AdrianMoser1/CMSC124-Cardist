@@ -26,10 +26,11 @@ Cardist is a small, dynamically typed scripting language for describing turn-bas
 | `./run --eval <file>` | Not yet implemented — Lab 3. |
 | `./run` | Starts the REPL; tokenizes one line at a time as of Lab 1. |
 
-Exit codes:
-0 when the file scans cleanly
-65 when the scanner rejects the file (unterminated string, illegal character)
-70 reserved for runtime errors starting Lab 3.
+| Exit code | Meaning |
+|---|---|
+| 0 | file scans cleanly |
+| 65 | scanner rejects the file (unterminated string, illegal character) |
+| 70 | reserved for runtime errors starting Lab 3 |
 
 ## File extension
 
@@ -61,11 +62,10 @@ Exit codes:
 | block | grants block (damage mitigation) |
 | apply | applies a status effect (e.g. weak, vulnerable, poison) |
 | draw | draws a card |
-| fatigued| removes a card from the fight entirely |
+| banish | removes a card from the fight entirely |
 | turn | marks a turn-scoped block |
 | player | refers to the player entity |
-| buff | applies a buff to an entity |
-| debuff | applies a debuff to an entity |
+| effect | works alongside with apply to put a status in an entity |
 
 ### Operators
 
@@ -114,14 +114,17 @@ Exit codes:
 - Grouping delimiters: parentheses `( )`
 
 ## Token output format
-
+```
 Token(type=CARD, lexeme=card, literal=null, line=1)
+```
 Fields, in order: token type, the raw source text, the literal value (`null` for non-literal tokens), and the 1-indexed source line. 
 
 ## Errors and diagnostics
 Message format: 
+```
 [line 4] Error: Unterminated string.
 [line 9] Error: Unexpected character '$'. 
+```
 | Failure | Exit code |
 |---|---|
 | lexical error (unterminated string, illegal character) | 65 |
@@ -129,7 +132,7 @@ Message format:
 | runtime error | 70 (Lab 3) |
 
 ## Design rationale 
-Keywords split into two tiers: general-purpose control flow (`var`, `if`, `while`) and combat-domain vocabulary (`card`, `enemy`, `relic`, `intent`, `deal`, `apply`). The domain tier is deliberately close to how PVE card games UI describes things — "deal 6 damage," "apply 2 weak"  so a rules author's script reads like a card's actual tooltip. `intent` was included to dictate what would the enemy do in the next turn given a unique cyclical actions per enemy, it's cheap to reserve as a keyword now and expensive to retrofit into existing tests once card scripts already use `intent` as a bare identifier. `potion` and `artifact` share most of ‘card’'s shape (a name, a cost or trigger condition, and an effect block) but are kept as separate keywords rather than folded into one generic `item` block, since the design would treat trigger timing differently enough that conflating them now would make Lab 2's grammar harder to write correctly. 
+Keywords split into two tiers: general-purpose control flow (`var`, `if`, `while`) and combat-domain vocabulary (`card`, `enemy`, `artifact`, `intent`, `deal`, `apply`). The domain tier is deliberately close to how PVE card games UI describes things — "deal 6 damage," "apply 2 weak"  so a rules author's script reads like a card's actual tooltip. `intent` was included to dictate what would the enemy do in the next turn given a unique cyclical actions per enemy, it's cheap to reserve as a keyword now and expensive to retrofit into existing tests once card scripts already use `intent` as a bare identifier. `elixir` and `artifact` share most of ‘card’'s shape (a name, a cost or trigger condition, and an effect block) but are kept as separate keywords rather than folded into one generic `item` block, since the design would treat trigger timing differently enough that conflating them now would make Lab 2's grammar harder to write correctly. 
 
 ## Testing conventions
 
@@ -148,3 +151,52 @@ curl -sSL https://raw.githubusercontent.com/WhiteLicorice/cmsc-124-harness/v1.1/
 ./build.sh
 python3 run_tests.py tests/lab1
 ```
+
+## Sample code
+
+```
+card "Strike" {
+  cost = 1
+  effect {
+    deal 6 to enemy
+  }
+}
+```
+
+(A more elaborate `enemy "Cultist" { intent { ... } }` block scans the
+same way — `intent`, `if`, `turn`, `player`, and comparison operators
+all resolve to their own token types.)
+
+Output (`--tokenize` on just the "Strike" card above):
+
+```
+Token(type=CARD, lexeme=card, literal=null, line=1)
+Token(type=STRING, lexeme="Strike", literal=Strike, line=1)
+Token(type=LEFT_BRACE, lexeme={, literal=null, line=1)
+Token(type=COST, lexeme=cost, literal=null, line=2)
+Token(type=EQUAL, lexeme==, literal=null, line=2)
+Token(type=NUMBER, lexeme=1, literal=1, line=2)
+Token(type=IDENTIFIER, lexeme=effect, literal=null, line=3)
+Token(type=LEFT_BRACE, lexeme={, literal=null, line=3)
+Token(type=DEAL, lexeme=deal, literal=null, line=4)
+Token(type=NUMBER, lexeme=6, literal=6, line=4)
+Token(type=IDENTIFIER, lexeme=to, literal=null, line=4)
+Token(type=ENEMY, lexeme=enemy, literal=null, line=4)
+Token(type=RIGHT_BRACE, lexeme=}, literal=null, line=5)
+Token(type=RIGHT_BRACE, lexeme=}, literal=null, line=6)
+Token(type=EOF, lexeme=, literal=null, line=7)
+```
+
+## Known limitations
+
+- No string escape sequences.
+- No multi-line strings — a newline inside a string is a scan error.
+- No block comments.
+- `enemy`/`intent`/`artifact`/`elixir` are reserved keywords but their
+  runtime semantics will be implemented later on
+
+## Changelog
+
+| Activity | What changed in the language |
+|---|---|
+| Lab 1 | Scanner, initial keyword list, token format frozen. |
