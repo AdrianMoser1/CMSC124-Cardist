@@ -1,187 +1,140 @@
-# [Language name]
+# Cardist
 
 ## Creators
 
-- Adrian Benjamin E. Moser AdrianMoser1
-- Lunele Iven S. Moscoso LuneleIven
+- Adrian Moser (AdrianMoser1)
+- Lunele Moscos (LuneleIven)
 
 ## Overview
 
-[One paragraph: what the language is for, who would use it, what writing it
-feels like.]
+Cardist is a small, dynamically typed scripting language for describing turn-based card game rules, cards, effects, costs, and turn sequencing. It's built for someone designing a card game who wants to write "what a card does" as readable code with corresponding syntax rather than a giant switch statement in a general-purpose language. It simplifies the core idea of PVE card game building: it shouldn’t be too complicated to make one, especially for aspiring game designers. 
 
 ## Host language and build
 
-- Host language: Go (go1.27.0)
+- Host language: Go 1.26.7
 - Version metadata: go.mod
 - Build: `./build.sh`
-- {
-    clone repo, chmod +x build.sh in terminal, 
-}
+- Fresh clone needs Go 1.22+ on PATH; no other dependencies.
 
 ## Running it
 
-
 | Command | What it does |
 |---|---|
-| `./run <file>` | [Executes a program. Available from Lab 4.] |
-| `./run --tokenize <file>` | [Prints the token stream.] |
-| `./run --parse <file>` | [Prints the parsed tree.] |
-| `./run --eval <file>` | [Evaluates each expression and prints its value.] |
-| `./run` | [Starts the REPL.] |
+| `./run <file>` | Executes a program. Available from Lab 4. |
+| `./run --tokenize <file>` | Prints the token stream. |
+| `./run --parse <file>` | Not yet implemented — Lab 2. |
+| `./run --eval <file>` | Not yet implemented — Lab 3. |
+| `./run` | Starts the REPL; tokenizes one line at a time as of Lab 1. |
 
-
-Exit codes: 0 [when], 65 [when], 70 [when].
+| Exit code | Meaning |
+|---|---|
+| 0 | file scans cleanly |
+| 65 | scanner rejects the file (unterminated string, illegal character) |
+| 70 | reserved for runtime errors starting Lab 3 |
 
 ## File extension
 
-`[.ext]` [Must match the `ext` field in every tests/lab*/manifest.json.]
+`.deck` — must match the `ext` field in every `tests/lab*/manifest.json`.
 
 ## Lexical structure
 
 ### Keywords
 
-
 | Keyword | Purpose |
 |---|---|
-| [word] | [what it does] |
-
+| var | declares a variable |
+| if | conditional branch |
+| else | alternate branch |
+| while | loop |
+| true | boolean literal |
+| false | boolean literal |
+| nil | absence of a value |
+| and | logical AND |
+| or | logical OR |
+| card | declares a card definition block |
+| energy | refers to current energy pool |
+| cost | declares a card's energy cost |
+| enemy | declares an enemy definition block |
+| intent | declares an enemy's telegraphed next action |
+| artifact | declares an artifact definition block |
+| elixir | declares an elixir definition block |
+| deal | deals damage |
+| block | grants block (damage mitigation) |
+| apply | applies a status effect (e.g. weak, vulnerable, poison) |
+| draw | draws a card |
+| banish | removes a card from the fight entirely |
+| turn | marks a turn-scoped block |
+| player | refers to the player entity |
+| effect | works alongside with apply to put a status in an entity |
 
 ### Operators
 
-
 | Operator | Category | Operands | Associativity | Precedence |
 |---|---|---|---|---|
-| [op] | [arithmetic, comparison, logical, assignment, other] | [unary or binary] | [left, right, none] | [1 = loosest] |
+| `=` | assignment | binary | right | 1 |
+| `or` | logical | binary | left | 2 |
+| `and` | logical | binary | left | 3 |
+| `==`, `!=` | comparison | binary | left | 4 |
+| `<`, `<=`, `>`, `>=` | comparison | binary | left | 5 |
+| `+`, `-` | arithmetic | binary | left | 6 |
+| `!` | logical negation | unary | right | 7 |
+| `-` | arithmetic negation | unary | right | 7 |
 
 
 ### Literals
 
-
 | Kind | Syntax | Produces |
 |---|---|---|
-| [number] | [e.g. 42, 3.14] | [what runtime value] |
-| [string] | [e.g. "hello", escapes supported] | [what runtime value] |
-| [boolean] | [true, false] | [what runtime value] |
-| [nil] | [spelling] | [what runtime value] |
-
+| number | `6`, `1.5` | Go float64 |
+| string | `"Strike"`, no escapes yet | Go string |
+| boolean | `true`, `false` | Go bool |
+| nil | `nil` | Go nil interface |
 
 ### Identifiers
 
-- Start characters: [which]
-- Continue characters: [which]
-- Case-sensitive: [yes or no]
-- [Reserved patterns, length limits, or other restrictions.]
+- Start characters: letters, `_`
+- Continue characters: letters, digits, `_`
+- Case-sensitive: yes
+- No reserved-word prefixing restriction — `energy_gained` and `intent_next`
+  scan as identifiers, not as keyword-plus-suffix.
 
 ### Comments
 
-- Line comments: [token]
-- Block comments: [tokens, or "not supported"]
-- Nesting: [supported or not]
-- [Harness note: comment_prefix in tests/lab*/manifest.json is set to the
-  token above.]
+- Line comments: `//`
+- Block comments: not supported
+- Nesting: not applicable
+- Harness note: `comment_prefix` in `tests/lab1/manifest.json` is set
+  to `//`.
 
 ## Whitespace and termination
 
-- Whitespace significant: [yes or no, and where]
-- Statement terminator: [e.g. semicolon, newline, none]
-- Block delimiters: [e.g. braces, indentation]
-- Grouping delimiters: [e.g. parentheses]
+- Whitespace significant: no, beyond separating tokens
+- Statement terminator: none (newline-agnostic; block scoping does the work)
+- Block delimiters: braces `{ }`
+- Grouping delimiters: parentheses `( )`
 
 ## Token output format
-
 ```
-[one line of real --tokenize output]
+Token(type=CARD, lexeme=card, literal=null, line=1)
 ```
-
-[What each field means. Frozen as of Lab 1; changes are recorded in the
-changelog.]
-
-## Grammar
-
-```
-[Your complete context-free grammar, current as of the latest activity.
-Unambiguous, with precedence and associativity encoded in rule structure.]
-```
-
-## Parse output format
-
-```
-[one line of real --parse output, e.g. (+ 1.0 (* 2.0 3.0))]
-```
-
-- Groupings print as: [form]
-- Numbers print as: [form]
-
-## Semantics
-
-### Values and types
-
-[What runtime values exist, and how they are represented in the host
-language.]
-
-### Value printing
-
-- Numbers: [e.g. 5 rather than 5.0]
-- Nil: [spelling]
-- Strings: [with or without quotes]
-
-### Truthiness
-
-[The complete rule. Which values are false in a condition; everything else is
-true.]
-
-### Operator semantics
-
-- Arithmetic: [accepted operand types]
-- `+` on strings: [concatenation, error, or coercion]
-- Mixed types: [what happens]
-- Comparison: [accepted operand types]
-- Equality across types: [false, or an error]
-- Division by zero: [value produced, or runtime error]
-
-### Scope and bindings
-
-- Redeclaration in the same scope: [allowed or an error]
-- Uninitialized variable holds: [value]
-- Shadowing: [behavior]
-- Undefined name: [static error with exit 65, or runtime error with exit 70]
-
-### Control flow and functions
-
-- Logical operators return: [booleans, or the operand]
-- Dangling else binds to: [which if]
-- Closure capture of a loop variable: [per iteration, or shared]
-- Function with no return statement produces: [value]
-- Arity mismatch: [message and exit code]
-
-## Native functions
-
-
-| Name | Arguments | Returns | Notes |
-|---|---|---|---|
-| [name] | [count and types] | [type] | [caveats] |
-
+Fields, in order: token type, the raw source text, the literal value (`null` for non-literal tokens), and the 1-indexed source line. 
 
 ## Errors and diagnostics
-
-Message format:
-
+Message format: 
 ```
-[one real static error]
-[one real runtime error]
+[line 4] Error: Unterminated string.
+[line 9] Error: Unexpected character '$'. 
 ```
-
-
 | Failure | Exit code |
 |---|---|
-| [lexical error] | 65 |
-| [syntax error] | 65 |
-| [runtime error] | 70 |
+| lexical error (unterminated string, illegal character) | 65 |
+| syntax error | 65 (Lab 2) |
+| runtime error | 70 (Lab 3) |
 
+## Design rationale 
+Keywords split into two tiers: general-purpose control flow (`var`, `if`, `while`) and combat-domain vocabulary (`card`, `enemy`, `artifact`, `intent`, `deal`, `apply`). The domain tier is deliberately close to how PVE card games UI describes things — "deal 6 damage," "apply 2 weak"  so a rules author's script reads like a card's actual tooltip. `intent` was included to dictate what would the enemy do in the next turn given a unique cyclical actions per enemy, it's cheap to reserve as a keyword now and expensive to retrofit into existing tests once card scripts already use `intent` as a bare identifier. `elixir` and `artifact` share most of ‘card’'s shape (a name, a cost or trigger condition, and an effect block) but are kept as separate keywords rather than folded into one generic `item` block, since the design would treat trigger timing differently enough that conflating them now would make Lab 2's grammar harder to write correctly. 
 
 ## Testing conventions
-
 
 | Folder | Activity | Mode | Flag |
 |---|---|---|---|
@@ -190,11 +143,6 @@ Message format:
 | tests/lab3 | Evaluator | inline | `--eval` |
 | tests/lab4 | Context | inline | none |
 | tests/lab5 | Functions | inline | none |
-
-
-```
-[specific tests]...
-```
 
 Run locally with:
 
@@ -207,29 +155,48 @@ python3 run_tests.py tests/lab1
 ## Sample code
 
 ```
-[a short program]
+card "Strike" {
+  cost = 1
+  effect {
+    deal 6 to enemy
+  }
+}
 ```
 
-Output:
+(A more elaborate `enemy "Cultist" { intent { ... } }` block scans the
+same way — `intent`, `if`, `turn`, `player`, and comparison operators
+all resolve to their own token types.)
+
+Output (`--tokenize` on just the "Strike" card above):
 
 ```
-[its output]
+Token(type=CARD, lexeme=card, literal=null, line=1)
+Token(type=STRING, lexeme="Strike", literal=Strike, line=1)
+Token(type=LEFT_BRACE, lexeme={, literal=null, line=1)
+Token(type=COST, lexeme=cost, literal=null, line=2)
+Token(type=EQUAL, lexeme==, literal=null, line=2)
+Token(type=NUMBER, lexeme=1, literal=1, line=2)
+Token(type=IDENTIFIER, lexeme=effect, literal=null, line=3)
+Token(type=LEFT_BRACE, lexeme={, literal=null, line=3)
+Token(type=DEAL, lexeme=deal, literal=null, line=4)
+Token(type=NUMBER, lexeme=6, literal=6, line=4)
+Token(type=IDENTIFIER, lexeme=to, literal=null, line=4)
+Token(type=ENEMY, lexeme=enemy, literal=null, line=4)
+Token(type=RIGHT_BRACE, lexeme=}, literal=null, line=5)
+Token(type=RIGHT_BRACE, lexeme=}, literal=null, line=6)
+Token(type=EOF, lexeme=, literal=null, line=7)
 ```
-
-## Design rationale
-
-[Why the language is the way it is. Cover the choices that surprised you, the
-features you cut, and the decisions you reversed. Specific reasons, not
-approval of your own work.]
 
 ## Known limitations
 
-- [What doesn't work, what is unimplemented, where behavior is worse than you
-  would like.]
+- No string escape sequences.
+- No multi-line strings — a newline inside a string is a scan error.
+- No block comments.
+- `enemy`/`intent`/`artifact`/`elixir` are reserved keywords but their
+  runtime semantics will be implemented later on
 
 ## Changelog
 
-
 | Activity | What changed in the language |
 |---|---|
-| Lab 1 | [entry] |
+| Lab 1 | Scanner, initial keyword list, token format frozen. |
