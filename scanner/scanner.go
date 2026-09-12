@@ -8,6 +8,7 @@ import (
 type TokenType int
 
 const (
+	//single
 	TOKEN_LEFT_PAREN TokenType = iota //iota so each const var gets assigned a sequential number
 	TOKEN_RIGHT_PAREN
 	TOKEN_LEFT_BRACE  // {
@@ -21,6 +22,16 @@ const (
 	TOKEN_COMMA       // ,
 	TOKEN_COLON       // :
 	TOKEN_SEMI_COLON  // ;
+
+
+	//double
+	TOKEN_BANG //!
+	TOKEN_BANG_EQUAL //!=
+	TOKEN_EQUAL_EQUAL //==
+	TOKEN_GREATER_EQUAL //>=
+	TOKEN_LESSER_EQUAL //<=
+	TOKEN_SLASH // / 
+
 	TOKEN_EOF
 )
 
@@ -54,6 +65,18 @@ func (t TokenType) String() string {
 		return "SEMI_COLON"
 	case TOKEN_EOF:
 		return "EOF"
+	case TOKEN_BANG:
+		return "BANG"
+	case TOKEN_BANG_EQUAL:
+		return "BANG_EQUAL"
+	case TOKEN_EQUAL_EQUAL:
+		return "EQUAL_EQUAL"
+	case TOKEN_GREATER_EQUAL:
+		return "GREATER_EQUAL"
+	case TOKEN_LESSER_EQUAL:
+		return "LESSER_EQUAL"
+	case TOKEN_SLASH:
+		return "SLASH"
 	default:
 		return "UNKNOWN"
 	}
@@ -120,6 +143,32 @@ func (s *Scanner) addToken(t TokenType) { //creates token type and appends to to
 	s.addTokenWithLiteral(t, nil)
 }
 
+func (s *Scanner) match(expected byte) bool { //for consumation of characters only if matching
+	if s.isAtEnd() {
+		return false
+	}
+	if s.source[s.current] != expected {
+		return false
+	}
+	s.current++
+	return true
+}
+
+func (s *Scanner) peek() byte { //to check current character without advancing current
+	if s.isAtEnd() {
+		return 0
+	}
+	return s.source[s.current]
+}
+
+func (s *Scanner) peekNex() byte {
+	if s.current+1 >= len(s.source){
+		return 0
+	}
+	return s.source[s.current+1]
+}
+
+
 func (s *Scanner) addTokenWithLiteral(t TokenType, literal any) {
 	lexeme := s.source[s.start:s.current]
 	s.tokens = append(s.tokens, Token{
@@ -149,6 +198,7 @@ func (s *Scanner) ScanTokens() []Token {
 func (s *Scanner) scanToken() {
 	c := s.advance()
 	switch c {
+	//single-char
 	case '(':
 		s.addToken(TOKEN_LEFT_PAREN)
 	case ')':
@@ -163,12 +213,6 @@ func (s *Scanner) scanToken() {
 		s.addToken(TOKEN_MINUS)
 	case '*':
 		s.addToken(TOKEN_STAR)
-	case '=':
-		s.addToken(TOKEN_EQUAL)
-	case '>':
-		s.addToken(TOKEN_GREATER)
-	case '<':
-		s.addToken(TOKEN_LESSER)
 	case ',':
 		s.addToken(TOKEN_COMMA)
 	case ':':
@@ -176,6 +220,44 @@ func (s *Scanner) scanToken() {
 	case ';':
 		s.addToken(TOKEN_SEMI_COLON)
 
+	//double-char w/h match
+	case '!':
+		if s.match('=') {
+			s.addToken(TOKEN_BANG_EQUAL)
+		} else {
+			s.addToken(TOKEN_BANG)
+		}
+	case '=':
+		if s.match('=') {
+			s.addToken(TOKEN_EQUAL_EQUAL)
+		} else {
+			s.addToken(TOKEN_EQUAL)
+		}
+	case '<':
+		if s.match('=') {
+			s.addToken(TOKEN_LESSER_EQUAL)
+		} else {
+			s.addToken(TOKEN_LESSER)
+		}
+	case '>':
+		if s.match('=') {
+			s.addToken(TOKEN_GREATER_EQUAL)
+		} else {
+			s.addToken(TOKEN_GREATER)
+		}
+
+	case '/':
+		if s.match('/') {
+			// A comment goes until the end of the line.
+			// use peek() so we DON'T consume the '\n' character here;
+			// the next iteration of scanToken() will handle '\n' and increment s.line.
+			for s.peek() != '\n' && !s.isAtEnd() {
+				s.advance()
+			}
+		} else {
+			s.addToken(TOKEN_SLASH)
+		}	
+	
 	case ' ', '\r', '\t':
 		break
 	case '\n':
