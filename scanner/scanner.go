@@ -8,6 +8,7 @@ import (
 type TokenType int
 
 const (
+	//single
 	TOKEN_LEFT_PAREN TokenType = iota //iota so each const var gets assigned a sequential number
 	TOKEN_RIGHT_PAREN
 	TOKEN_LEFT_BRACE  // {
@@ -21,8 +22,6 @@ const (
 	TOKEN_COMMA       // ,
 	TOKEN_COLON       // :
 	TOKEN_SEMI_COLON  // ;
-<<<<<<< Updated upstream
-=======
 
 	//double
 	TOKEN_BANG          //!
@@ -75,7 +74,6 @@ const (
 
 	//end of file
 
->>>>>>> Stashed changes
 	TOKEN_EOF
 )
 
@@ -109,8 +107,6 @@ func (t TokenType) String() string {
 		return "SEMI_COLON"
 	case TOKEN_EOF:
 		return "EOF"
-<<<<<<< Updated upstream
-=======
 	case TOKEN_BANG:
 		return "BANG"
 	case TOKEN_BANG_EQUAL:
@@ -177,7 +173,6 @@ func (t TokenType) String() string {
 		return "PLAYER"
 	case TOKEN_EFFECT:
 		return "EFFECT"
->>>>>>> Stashed changes
 	default:
 		return "UNKNOWN"
 
@@ -245,8 +240,6 @@ func (s *Scanner) addToken(t TokenType) { //creates token type and appends to to
 	s.addTokenWithLiteral(t, nil)
 }
 
-<<<<<<< Updated upstream
-=======
 func (s *Scanner) match(expected byte) bool { //for consumation of characters only if matching
 	if s.isAtEnd() {
 		return false
@@ -272,7 +265,7 @@ func (s *Scanner) peekNext() byte { //to check next character without advancing 
 	return s.source[s.current+1]
 }
 
-func isAlpha(c byte) bool { //checks if character is alphabetic
+func isAlpha(c byte) bool { //checks if character is an alphabet
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
 }
 
@@ -297,7 +290,6 @@ var keywords = map[string]TokenType{
 	"turn": TOKEN_TURN, "player": TOKEN_PLAYER,
 }
 
->>>>>>> Stashed changes
 func (s *Scanner) addTokenWithLiteral(t TokenType, literal any) {
 	lexeme := s.source[s.start:s.current]
 	s.tokens = append(s.tokens, Token{
@@ -386,6 +378,7 @@ func (s *Scanner) ScanTokens() []Token {
 func (s *Scanner) scanToken() {
 	c := s.advance()
 	switch c {
+	//single-char
 	case '(':
 		s.addToken(TOKEN_LEFT_PAREN)
 	case ')':
@@ -400,12 +393,6 @@ func (s *Scanner) scanToken() {
 		s.addToken(TOKEN_MINUS)
 	case '*':
 		s.addToken(TOKEN_STAR)
-	case '=':
-		s.addToken(TOKEN_EQUAL)
-	case '>':
-		s.addToken(TOKEN_GREATER)
-	case '<':
-		s.addToken(TOKEN_LESSER)
 	case ',':
 		s.addToken(TOKEN_COMMA)
 	case ':':
@@ -413,8 +400,6 @@ func (s *Scanner) scanToken() {
 	case ';':
 		s.addToken(TOKEN_SEMI_COLON)
 
-<<<<<<< Updated upstream
-=======
 	//double-char w/h match
 	case '!':
 		if s.match('=') {
@@ -453,7 +438,6 @@ func (s *Scanner) scanToken() {
 			s.addToken(TOKEN_SLASH)
 		}
 
->>>>>>> Stashed changes
 	case ' ', '\r', '\t':
 		break
 	case '\n':
