@@ -21,6 +21,61 @@ const (
 	TOKEN_COMMA       // ,
 	TOKEN_COLON       // :
 	TOKEN_SEMI_COLON  // ;
+<<<<<<< Updated upstream
+=======
+
+	//double
+	TOKEN_BANG          //!
+	TOKEN_BANG_EQUAL    //!=
+	TOKEN_EQUAL_EQUAL   //==
+	TOKEN_GREATER_EQUAL //>=
+	TOKEN_LESSER_EQUAL  //<=
+	TOKEN_SLASH         // /
+
+	//literals
+	TOKEN_IDENTIFIER
+	TOKEN_STRING
+	TOKEN_NUMBER
+
+	//literals-general
+	TOKEN_VAR
+	TOKEN_IF
+	TOKEN_ELSE
+	TOKEN_ELSEIF
+	TOKEN_SWITCH
+	TOKEN_WHILE
+	TOKEN_TRUE
+	TOKEN_FALSE
+	TOKEN_NIL
+	TOKEN_AND
+	TOKEN_OR
+	TOKEN_PRINT
+	TOKEN_RETURN
+	TOKEN_FOR
+	TOKEN_FUNCTION
+	TOKEN_BREAK
+	TOKEN_CONTINUE
+
+	//keywords-cardist domain
+	TOKEN_CARD
+	TOKEN_ENERGY
+	TOKEN_COST
+	TOKEN_ENEMY
+	TOKEN_INTENT
+	TOKEN_ARTIFACT
+	TOKEN_ELIXIR
+	TOKEN_DEAL
+	TOKEN_BLOCK
+	TOKEN_APPLY
+	TOKEN_DRAW
+	TOKEN_BANISH
+	TOKEN_TURN
+	TOKEN_PLAYER
+	TOKEN_EFFECT
+
+	//end of file
+
+>>>>>>> Stashed changes
 	TOKEN_EOF
 )
 
@@ -54,8 +109,78 @@ func (t TokenType) String() string {
 		return "SEMI_COLON"
 	case TOKEN_EOF:
 		return "EOF"
+<<<<<<< Updated upstream
+=======
+	case TOKEN_BANG:
+		return "BANG"
+	case TOKEN_BANG_EQUAL:
+		return "BANG_EQUAL"
+	case TOKEN_EQUAL_EQUAL:
+		return "EQUAL_EQUAL"
+	case TOKEN_GREATER_EQUAL:
+		return "GREATER_EQUAL"
+	case TOKEN_LESSER_EQUAL:
+		return "LESSER_EQUAL"
+	case TOKEN_SLASH:
+		return "SLASH"
+	case TOKEN_IDENTIFIER:
+		return "IDENTIFIER"
+	case TOKEN_STRING:
+		return "STRING"
+	case TOKEN_NUMBER:
+		return "NUMBER"
+	case TOKEN_VAR:
+		return "VAR"
+	case TOKEN_IF:
+		return "IF"
+	case TOKEN_ELSE:
+		return "ELSE"
+	case TOKEN_WHILE:
+		return "WHILE"
+	case TOKEN_TRUE:
+		return "TRUE"
+	case TOKEN_FALSE:
+		return "FALSE"
+	case TOKEN_NIL:
+		return "NIL"
+	case TOKEN_AND:
+		return "AND"
+	case TOKEN_OR:
+		return "OR"
+	case TOKEN_CARD:
+		return "CARD"
+	case TOKEN_ENERGY:
+		return "ENERGY"
+	case TOKEN_COST:
+		return "COST"
+	case TOKEN_ENEMY:
+		return "ENEMY"
+	case TOKEN_INTENT:
+		return "INTENT"
+	case TOKEN_ARTIFACT:
+		return "ARTIFACT"
+	case TOKEN_ELIXIR:
+		return "ELIXIR"
+	case TOKEN_DEAL:
+		return "DEAL"
+	case TOKEN_BLOCK:
+		return "BLOCK"
+	case TOKEN_APPLY:
+		return "APPLY"
+	case TOKEN_DRAW:
+		return "DRAW"
+	case TOKEN_BANISH:
+		return "BANISH"
+	case TOKEN_TURN:
+		return "TURN"
+	case TOKEN_PLAYER:
+		return "PLAYER"
+	case TOKEN_EFFECT:
+		return "EFFECT"
+>>>>>>> Stashed changes
 	default:
 		return "UNKNOWN"
+
 	}
 }
 
@@ -120,6 +245,59 @@ func (s *Scanner) addToken(t TokenType) { //creates token type and appends to to
 	s.addTokenWithLiteral(t, nil)
 }
 
+<<<<<<< Updated upstream
+=======
+func (s *Scanner) match(expected byte) bool { //for consumation of characters only if matching
+	if s.isAtEnd() {
+		return false
+	}
+	if s.source[s.current] != expected {
+		return false
+	}
+	s.current++
+	return true
+}
+
+func (s *Scanner) peek() byte { //to check current character without advancing current
+	if s.isAtEnd() {
+		return 0
+	}
+	return s.source[s.current]
+}
+
+func (s *Scanner) peekNext() byte { //to check next character without advancing current
+	if s.current+1 >= len(s.source) {
+		return 0
+	}
+	return s.source[s.current+1]
+}
+
+func isAlpha(c byte) bool { //checks if character is alphabetic
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+}
+
+func isDigit(c byte) bool { //checks if character is digit
+	return c >= '0' && c <= '9'
+}
+
+func isAlphaNumeric(c byte) bool { //checks if character is alphanumeric
+	return isAlpha(c) || isDigit(c)
+}
+
+// Maps every reserved word to its token type
+// Anything that starts with a letter but isn't in this table is a considered as an IDENTIFIER.
+var keywords = map[string]TokenType{
+	"var": TOKEN_VAR, "if": TOKEN_IF, "else": TOKEN_ELSE, "while": TOKEN_WHILE,
+	"true": TOKEN_TRUE, "false": TOKEN_FALSE, "nil": TOKEN_NIL,
+	"and": TOKEN_AND, "or": TOKEN_OR,
+	"card": TOKEN_CARD, "energy": TOKEN_ENERGY, "cost": TOKEN_COST,
+	"enemy": TOKEN_ENEMY, "intent": TOKEN_INTENT, "artifact": TOKEN_ARTIFACT,
+	"elixir": TOKEN_ELIXIR, "deal": TOKEN_DEAL, "block": TOKEN_BLOCK,
+	"apply": TOKEN_APPLY, "draw": TOKEN_DRAW, "banish": TOKEN_BANISH,
+	"turn": TOKEN_TURN, "player": TOKEN_PLAYER,
+}
+
+>>>>>>> Stashed changes
 func (s *Scanner) addTokenWithLiteral(t TokenType, literal any) {
 	lexeme := s.source[s.start:s.current]
 	s.tokens = append(s.tokens, Token{
@@ -128,6 +306,65 @@ func (s *Scanner) addTokenWithLiteral(t TokenType, literal any) {
 		Literal: literal,
 		Line:    s.line,
 	})
+}
+
+// identifier consumes the WHOLE run of letters/digits/underscores first (by using peek())
+// then compares the finished string against the keyword table
+// Checking keywords one character at a time instead would break
+func (s *Scanner) identifier() {
+	for isAlphaNumeric(s.peek()) {
+		s.advance()
+	}
+	text := s.source[s.start:s.current] //final string of the identifier, to be checked against keywords table
+	if t, ok := keywords[text]; ok {    //if the text is found in the keywords map, then it's a keyword
+		s.addToken(t)
+	} else {
+		s.addToken(TOKEN_IDENTIFIER)
+	}
+}
+
+// number handles both integers and decimals. A "." is only part of the
+// number if a digit follows it — otherwise it's its own token later,
+// so "3.toString" and "3.14" both scan sensibly.
+func (s *Scanner) number() {
+	for isDigit(s.peek()) { //consume all digits
+		s.advance()
+	}
+	if s.peek() == '.' && isDigit(s.peekNext()) { //next number is a decimal, so consume the "." and the following digits
+		s.advance() // consume the "."
+		for isDigit(s.peek()) {
+			s.advance()
+		}
+	}
+
+	text := s.source[s.start:s.current]       //final string of the number, to be converted to float64
+	s.addTokenWithLiteral(TOKEN_NUMBER, text) //token with literal value
+}
+
+// string consumes up to the closing quote. Per README, Cardist strings
+// may not span lines — a newline before the closing quote is reported as an error
+// The literal value of the string excludes the bordering quotes.
+func (s *Scanner) string() {
+	startLine := s.line
+
+	for s.peek() != '"' && !s.isAtEnd() { //checks for the closing quote and if it has reached the end of the string
+		if s.peek() == '\n' { // error if newline is found before closing quote
+			s.reportError(startLine, "Unterminated string.")
+			return
+		}
+		s.advance()
+	}
+
+	if s.isAtEnd() { //if it has reached the end of the string without finding a closing quote
+		s.reportError(startLine, "Unterminated string.")
+		return
+	}
+
+	s.advance() // consume the closing "
+
+	// Literal excludes the bordering quotes; while lexeme keeps them.
+	value := s.source[s.start+1 : s.current-1]
+	s.addTokenWithLiteral(TOKEN_STRING, value)
 }
 
 // Main scanner feature
@@ -176,6 +413,47 @@ func (s *Scanner) scanToken() {
 	case ';':
 		s.addToken(TOKEN_SEMI_COLON)
 
+<<<<<<< Updated upstream
+=======
+	//double-char w/h match
+	case '!':
+		if s.match('=') {
+			s.addToken(TOKEN_BANG_EQUAL)
+		} else {
+			s.addToken(TOKEN_BANG)
+		}
+	case '=':
+		if s.match('=') {
+			s.addToken(TOKEN_EQUAL_EQUAL)
+		} else {
+			s.addToken(TOKEN_EQUAL)
+		}
+	case '<':
+		if s.match('=') {
+			s.addToken(TOKEN_LESSER_EQUAL)
+		} else {
+			s.addToken(TOKEN_LESSER)
+		}
+	case '>':
+		if s.match('=') {
+			s.addToken(TOKEN_GREATER_EQUAL)
+		} else {
+			s.addToken(TOKEN_GREATER)
+		}
+
+	case '/':
+		if s.match('/') {
+			// A comment goes until the end of the line.
+			// use peek() so we DON'T consume the '\n' character here;
+			// the next iteration of scanToken() will handle '\n' and increment s.line.
+			for s.peek() != '\n' && !s.isAtEnd() {
+				s.advance()
+			}
+		} else {
+			s.addToken(TOKEN_SLASH)
+		}
+
+>>>>>>> Stashed changes
 	case ' ', '\r', '\t':
 		break
 	case '\n':

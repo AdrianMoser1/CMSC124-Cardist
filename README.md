@@ -44,13 +44,23 @@ Cardist is a small, dynamically typed scripting language for describing turn-bas
 |---|---|
 | var | declares a variable |
 | if | conditional branch |
-| else | alternate branch |
+| elseif | n or more alternate branch |
+| else | last alternate branch |
+| switch | multiple alternate branching |
 | while | loop |
 | true | boolean literal |
 | false | boolean literal |
 | nil | absence of a value |
 | and | logical AND |
 | or | logical OR |
+| func | identify to be a function that can be called |
+| print | prints for user view |
+| return | return a value when from function |
+| for | predetermined looping |
+| break | disrupt the flow of iteration |
+| continue | skip the current iteration |
+| or | logical OR |
+
 | card | declares a card definition block |
 | energy | refers to current energy pool |
 | cost | declares a card's energy cost |
