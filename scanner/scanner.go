@@ -3,6 +3,7 @@ package scanner
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type TokenType int
@@ -280,6 +281,9 @@ func isAlphaNumeric(c byte) bool { //checks if character is alphanumeric
 // Maps every reserved word to its token type
 // Anything that starts with a letter but isn't in this table is a considered as an IDENTIFIER.
 var keywords = map[string]TokenType{
+	"print": TOKEN_PRINT, "return": TOKEN_RETURN, "for": TOKEN_FOR,
+	"function": TOKEN_FUNCTION, "break": TOKEN_BREAK, "continue": TOKEN_CONTINUE,
+	"elseif": TOKEN_ELSEIF, "switch": TOKEN_SWITCH, "effect": TOKEN_EFFECT,
 	"var": TOKEN_VAR, "if": TOKEN_IF, "else": TOKEN_ELSE, "while": TOKEN_WHILE,
 	"true": TOKEN_TRUE, "false": TOKEN_FALSE, "nil": TOKEN_NIL,
 	"and": TOKEN_AND, "or": TOKEN_OR,
@@ -328,9 +332,13 @@ func (s *Scanner) number() {
 			s.advance()
 		}
 	}
-
-	text := s.source[s.start:s.current]       //final string of the number, to be converted to float64
-	s.addTokenWithLiteral(TOKEN_NUMBER, text) //token with literal value
+	text := s.source[s.start:s.current]
+	value, err := strconv.ParseFloat(text, 64) //conversion to float64
+	if err != nil {
+		s.reportError(s.line, fmt.Sprintf("Invalid number literal: %s", text))
+		return
+	}
+	s.addTokenWithLiteral(TOKEN_NUMBER, value)
 }
 
 // string consumes up to the closing quote. Per README, Cardist strings
@@ -425,7 +433,6 @@ func (s *Scanner) scanToken() {
 		} else {
 			s.addToken(TOKEN_GREATER)
 		}
-
 	case '/':
 		if s.match('/') {
 			// A comment goes until the end of the line.
@@ -437,12 +444,19 @@ func (s *Scanner) scanToken() {
 		} else {
 			s.addToken(TOKEN_SLASH)
 		}
-
+	case '"':
+		s.string()
 	case ' ', '\r', '\t':
 		break
 	case '\n':
 		s.line++ //increment line count for error reporting
-	default:
-		s.reportError(s.line, fmt.Sprintf("Unexpected character: %c", c)) //report error but keep scanning, unincluded
+	default: //check if the character is a digit or an alphabetical character or if its an unexpected character
+		if isDigit(c) {
+			s.number()
+		} else if isAlpha(c) {
+			s.identifier()
+		} else {
+			s.reportError(s.line, fmt.Sprintf("Unexpected character: %c", c))
+		}
 	}
 }
