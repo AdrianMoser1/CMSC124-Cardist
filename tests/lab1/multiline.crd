@@ -1,0 +1,4 @@
+card "Strike" {
+  cost = 1
+  deal 6 to enemy
+}
