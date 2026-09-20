@@ -52,7 +52,7 @@ const (
 	TOKEN_PRINT
 	TOKEN_RETURN
 	TOKEN_FOR
-	TOKEN_FUNCTION
+	TOKEN_FUNC
 	TOKEN_BREAK
 	TOKEN_CONTINUE
 
@@ -80,103 +80,118 @@ const (
 
 func (t TokenType) String() string {
 	switch t {
-	case TOKEN_LEFT_PAREN:
-		return "LEFT_PAREN"
-	case TOKEN_RIGHT_PAREN:
-		return "RIGHT_PAREN"
-	case TOKEN_LEFT_BRACE:
-		return "LEFT_BRACE"
-	case TOKEN_RIGHT_BRACE:
-		return "RIGHT_BRACE"
-	case TOKEN_PLUS:
-		return "PLUS"
-	case TOKEN_MINUS:
-		return "MINUS"
-	case TOKEN_STAR:
-		return "STAR"
-	case TOKEN_EQUAL:
-		return "EQUAL"
-	case TOKEN_GREATER:
-		return "GREATER"
-	case TOKEN_LESSER:
-		return "LESSER"
-	case TOKEN_COMMA:
-		return "COMMA"
-	case TOKEN_COLON:
-		return "COLON"
-	case TOKEN_SEMI_COLON:
-		return "SEMI_COLON"
-	case TOKEN_EOF:
-		return "EOF"
-	case TOKEN_BANG:
-		return "BANG"
-	case TOKEN_BANG_EQUAL:
-		return "BANG_EQUAL"
-	case TOKEN_EQUAL_EQUAL:
-		return "EQUAL_EQUAL"
-	case TOKEN_GREATER_EQUAL:
-		return "GREATER_EQUAL"
-	case TOKEN_LESSER_EQUAL:
-		return "LESSER_EQUAL"
-	case TOKEN_SLASH:
-		return "SLASH"
-	case TOKEN_IDENTIFIER:
-		return "IDENTIFIER"
-	case TOKEN_STRING:
-		return "STRING"
-	case TOKEN_NUMBER:
-		return "NUMBER"
-	case TOKEN_VAR:
-		return "VAR"
-	case TOKEN_IF:
-		return "IF"
-	case TOKEN_ELSE:
-		return "ELSE"
-	case TOKEN_WHILE:
-		return "WHILE"
-	case TOKEN_TRUE:
-		return "TRUE"
-	case TOKEN_FALSE:
-		return "FALSE"
-	case TOKEN_NIL:
-		return "NIL"
-	case TOKEN_AND:
-		return "AND"
-	case TOKEN_OR:
-		return "OR"
-	case TOKEN_CARD:
-		return "CARD"
-	case TOKEN_ENERGY:
-		return "ENERGY"
-	case TOKEN_COST:
-		return "COST"
-	case TOKEN_ENEMY:
-		return "ENEMY"
-	case TOKEN_INTENT:
-		return "INTENT"
-	case TOKEN_ARTIFACT:
-		return "ARTIFACT"
-	case TOKEN_ELIXIR:
-		return "ELIXIR"
-	case TOKEN_DEAL:
-		return "DEAL"
-	case TOKEN_BLOCK:
-		return "BLOCK"
-	case TOKEN_APPLY:
-		return "APPLY"
-	case TOKEN_DRAW:
-		return "DRAW"
-	case TOKEN_BANISH:
-		return "BANISH"
-	case TOKEN_TURN:
-		return "TURN"
-	case TOKEN_PLAYER:
-		return "PLAYER"
-	case TOKEN_EFFECT:
-		return "EFFECT"
-	default:
-		return "UNKNOWN"
-
+		case TOKEN_LEFT_PAREN:
+			return "LEFT_PAREN"
+		case TOKEN_RIGHT_PAREN:
+			return "RIGHT_PAREN"
+		case TOKEN_LEFT_BRACE:
+			return "LEFT_BRACE"
+		case TOKEN_RIGHT_BRACE:
+			return "RIGHT_BRACE"
+		case TOKEN_PLUS:
+			return "PLUS"
+		case TOKEN_MINUS:
+			return "MINUS"
+		case TOKEN_STAR:
+			return "STAR"
+		case TOKEN_EQUAL:
+			return "EQUAL"
+		case TOKEN_GREATER:
+			return "GREATER"
+		case TOKEN_LESSER:
+			return "LESSER"
+		case TOKEN_COMMA:
+			return "COMMA"
+		case TOKEN_COLON:
+			return "COLON"
+		case TOKEN_SEMI_COLON:
+			return "SEMI_COLON"
+		case TOKEN_EOF:
+			return "EOF"
+		case TOKEN_BANG:
+			return "BANG"
+		case TOKEN_BANG_EQUAL:
+			return "BANG_EQUAL"
+		case TOKEN_EQUAL_EQUAL:
+			return "EQUAL_EQUAL"
+		case TOKEN_GREATER_EQUAL:
+			return "GREATER_EQUAL"
+		case TOKEN_LESSER_EQUAL:
+			return "LESSER_EQUAL"
+		case TOKEN_SLASH:
+			return "SLASH"
+		case TOKEN_IDENTIFIER:
+			return "IDENTIFIER"
+		case TOKEN_STRING:
+			return "STRING"
+		case TOKEN_NUMBER:
+			return "NUMBER"
+		case TOKEN_VAR:
+			return "VAR"
+		case TOKEN_IF:
+			return "IF"
+		case TOKEN_ELSE:
+			return "ELSE"
+		case TOKEN_ELSEIF:
+			return "ELSEIF"
+		case TOKEN_SWITCH:
+			return "SWITCH"
+		case TOKEN_PRINT:
+			return "PRINT"
+		case TOKEN_RETURN:
+			return "RETURN"
+		case TOKEN_FOR:
+			return "FOR"
+		case TOKEN_FUNC:
+			return "FUNC"
+		case TOKEN_BREAK:
+			return "BREAK"
+		case TOKEN_CONTINUE:
+			return "CONTINUE"	
+		case TOKEN_WHILE:
+			return "WHILE"
+		case TOKEN_TRUE:
+			return "TRUE"
+		case TOKEN_FALSE:
+			return "FALSE"
+		case TOKEN_NIL:
+			return "NIL"
+		case TOKEN_AND:
+			return "AND"
+		case TOKEN_OR:
+			return "OR"
+		case TOKEN_CARD:
+			return "CARD"
+		case TOKEN_ENERGY:
+			return "ENERGY"
+		case TOKEN_COST:
+			return "COST"
+		case TOKEN_ENEMY:
+			return "ENEMY"
+		case TOKEN_INTENT:
+			return "INTENT"
+		case TOKEN_ARTIFACT:
+			return "ARTIFACT"
+		case TOKEN_ELIXIR:
+			return "ELIXIR"
+		case TOKEN_DEAL:
+			return "DEAL"
+		case TOKEN_BLOCK:
+			return "BLOCK"
+		case TOKEN_APPLY:
+			return "APPLY"
+		case TOKEN_DRAW:
+			return "DRAW"
+		case TOKEN_BANISH:
+			return "BANISH"
+		case TOKEN_TURN:
+			return "TURN"
+		case TOKEN_PLAYER:
+			return "PLAYER"
+		case TOKEN_EFFECT:
+			return "EFFECT"
+		default:
+			return "UNKNOWN"
 	}
 }
 
@@ -200,8 +215,7 @@ func (s *Scanner) ErrorFound() bool { // Reports whether any error was recorded 
 }
 
 /*
-	reportError prints a diagnostic to stderr and marks the scan as failed.
-
+reportError prints a diagnostic to stderr and marks the scan as failed.
 It does not stop scanning, so later errors in the same file can still be reported in one pass.
 */
 func (s *Scanner) reportError(line int, message string) {
@@ -282,7 +296,7 @@ func isAlphaNumeric(c byte) bool { //checks if character is alphanumeric
 // Anything that starts with a letter but isn't in this table is a considered as an IDENTIFIER.
 var keywords = map[string]TokenType{
 	"print": TOKEN_PRINT, "return": TOKEN_RETURN, "for": TOKEN_FOR,
-	"function": TOKEN_FUNCTION, "break": TOKEN_BREAK, "continue": TOKEN_CONTINUE,
+	"function": TOKEN_FUNC, "break": TOKEN_BREAK, "continue": TOKEN_CONTINUE,
 	"elseif": TOKEN_ELSEIF, "switch": TOKEN_SWITCH, "effect": TOKEN_EFFECT,
 	"var": TOKEN_VAR, "if": TOKEN_IF, "else": TOKEN_ELSE, "while": TOKEN_WHILE,
 	"true": TOKEN_TRUE, "false": TOKEN_FALSE, "nil": TOKEN_NIL,

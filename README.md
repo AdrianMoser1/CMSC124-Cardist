@@ -28,13 +28,15 @@ Cardist is a small, dynamically typed scripting language for describing turn-bas
 
 | Exit code | Meaning |
 |---|---|
-| 0 | file scans cleanly |
-| 65 | scanner rejects the file (unterminated string, illegal character) |
-| 70 | reserved for runtime errors starting Lab 3 |
+| 0 | successful scan; token stream printed to stdout |
+| 64 | invalid command-line usage |
+| 65 | scanner found a lexical error (unterminated string, illegal character) |
+| 66 | file could not be read/opened |
+| 70 | command is not implemented yet (e.g. direct file execution before Lab 4) |
 
 ## File extension
 
-`.deck` — must match the `ext` field in every `tests/lab*/manifest.json`.
+`.crd` — must match the `ext` field in every `tests/lab*/manifest.json`.
 
 ## Lexical structure
 
@@ -59,8 +61,6 @@ Cardist is a small, dynamically typed scripting language for describing turn-bas
 | for | predetermined looping |
 | break | disrupt the flow of iteration |
 | continue | skip the current iteration |
-| or | logical OR |
-
 | card | declares a card definition block |
 | energy | refers to current energy pool |
 | cost | declares a card's energy cost |
