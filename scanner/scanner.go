@@ -359,24 +359,22 @@ func (s *Scanner) number() {
 // may not span lines — a newline before the closing quote is reported as an error
 // The literal value of the string excludes the bordering quotes.
 func (s *Scanner) string() {
-	startLine := s.line
-
-	for s.peek() != '"' && !s.isAtEnd() { //checks for the closing quote and if it has reached the end of the string
-		if s.peek() == '\n' { // error if newline is found before closing quote
-			s.reportError(startLine, "Unterminated string.")
-			return
+	for s.peek() != '"' && !s.isAtEnd() {
+		if s.peek() == '\n' {
+			s.line++ // Increment line counter for multi-line string support
 		}
 		s.advance()
 	}
 
-	if s.isAtEnd() { //if it has reached the end of the string without finding a closing quote
-		s.reportError(startLine, "Unterminated string.")
+	if s.isAtEnd() {
+		s.reportError(s.line, "Unterminated string.")
 		return
 	}
 
-	s.advance() // consume the closing "
+	// Consume closing quote
+	s.advance()
 
-	// Literal excludes the bordering quotes; while lexeme keeps them.
+	// Extract literal value (excluding outer quotes)
 	value := s.source[s.start+1 : s.current-1]
 	s.addTokenWithLiteral(TOKEN_STRING, value)
 }
