@@ -1,14 +1,14 @@
 name: lab-tests
-on: [push]
+on: [push, pull_request]
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
-      - run: chmod +x build.sh run
+          go-version-file: go.mod
       - run: ./build.sh
       - run: curl -sSL https://raw.githubusercontent.com/WhiteLicorice/cmsc-124-harness/v1.1/run_tests.py -o run_tests.py
       - run: python3 run_tests.py tests/lab0

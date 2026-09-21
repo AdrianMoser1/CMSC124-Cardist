@@ -7,21 +7,34 @@ import (
 	"os"
 )
 
-func main() { //checks the command line arguments and runs the appropriate mode: REPL or file scanning
+func main() {
 	args := os.Args[1:]
 
-	switch { //chooses which mode to run based on the command line arguments
-	case len(args) == 0: //runs the REPL
+	switch {
+	case len(args) == 0:
 		runPrompt()
-	case len(args) == 2 && args[0] == "--tokenize": //if the user wants to tokenize a file, it will call runFile with the file path
+	case len(args) == 2 && args[0] == "--tokenize":
 		runFile(args[1])
-	case len(args) == 1: //Prints out an error message and exit with code 70 (unhandled error since its yet to be implemented)
-		fmt.Fprintln(os.Stderr, "Error: execution is not implemented until Lab 4. Use --tokenize <file>.") //
-		os.Exit(70)
-	default: //if the user provides invalid arguments, it will print out the usage message and exit with code 64 (invalid command line usage)
+	case len(args) == 1:
+		// Lab 0 checks the file pipeline before the language has execution
+		// semantics, so preserve the source instead of interpreting it.
+		runEcho(args[0])
+	default:
 		fmt.Fprintln(os.Stderr, "Usage: run [--tokenize] [file]")
 		os.Exit(64)
 	}
+}
+
+// Lab 0 tests the command pipeline before execution exists, so this mode must
+// preserve the input exactly rather than attempting to interpret it.
+func runEcho(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read file %q: %v\n", path, err)
+		os.Exit(66)
+	}
+	fmt.Print(string(data))
+	os.Exit(0)
 }
 
 func runFile(path string) {
@@ -34,8 +47,8 @@ func runFile(path string) {
 	scn := scanner.NewScanner(string(data))
 	tokens := scn.ScanTokens()
 
-	// Diagnostics already went to stderr, inside the scanner
-	// stdout only prints the token stream if the scan came back clean
+	// Keep stdout reserved for complete token streams; diagnostics belong on
+	// stderr, and a lexical error must be reflected in the process status.
 	if scn.ErrorFound() {
 		os.Exit(65)
 	}
@@ -46,10 +59,8 @@ func runFile(path string) {
 	os.Exit(0)
 }
 
-/*
-runPrompt is the REPL: scans one line at a time.  Marking errors but still proceeds
-it just prints its error and the prompt returns
-*/
+// The REPL scans each line independently so one malformed input does not end
+// the session or prevent the user from trying the next line.
 func runPrompt() {
 	reader := bufio.NewScanner(os.Stdin)
 	fmt.Print("> ")
@@ -65,6 +76,6 @@ func runPrompt() {
 
 	if err := reader.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: reading input: %v\n", err)
-		os.Exit(1) // indicates an error while reading input from the user
+		os.Exit(1)
 	}
 }
