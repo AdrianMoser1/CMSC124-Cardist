@@ -211,3 +211,14 @@ Token(type=EOF, lexeme=, literal=null, line=7)
 | Activity | What changed in the language |
 |---|---|
 | Lab 1 | Scanner, initial keyword list, token format frozen. |
+|---|---|
+ 
+| Bug | What broke | Fix |
+|---|---|---|
+| Rejected files leaked partial output | Tokens printed to stdout as scanning happened, so a rejected file still showed partial tokens before the error — violated "nothing about a rejected file belongs on stdout" | Buffer all tokens, only flush to stdout if the scan succeeded |
+| `HadError`/`ErrorFound` unexported | Method named `errorFound()` (lowercase) — the `main` package couldn't call it; compile error | Capitalized to `ErrorFound()` |
+| Missing `reader.Err()` check | REPL's `bufio.Scanner` loop never distinguished normal EOF from an actual stdin read failure | Added the check; exit code `1` on a genuine read error |
+| `TokenType.String()` missing 8 cases | `print`, `return`, `for`, `function`/`func`, `break`, `continue`, `elseif`, `switch` all printed `type=UNKNOWN` despite being correctly recognized as keywords internally | Added the missing `case` statements |
+| `operators.expected` CRLF mismatch | `.expected` file saved with `\r\n`; the program only ever emits `\n` — byte-for-byte mismatch in the test harness | Re-saved LF-only; added `.gitattributes` (`* text=auto eol=lf`) so it can't recur |
+| `tests/lab0` regression | Rewriting `main.go` for `--tokenize` accidentally hijacked plain `./run <file>` to always reject with "not implemented until Lab 4," breaking Lab 0's original echo-the-file contract | Split into `runEcho()` (Lab 0's placeholder) vs `runFile()` (Lab 1's real scanning) — both now coexist |
+| Keywords table broken Markdown | Table split into two blocks mid-document with no header/separator on the second half, plus a duplicated `or` row | Merged into one continuous table |
