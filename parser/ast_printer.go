@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -24,7 +25,7 @@ func (p *AstPrinter) VisitLiteral(expr *LiteralExpr) string {
 	}
 	switch v := expr.Value.(type) {
 	case float64:
-		s := fmt.Sprintf("%v", v)
+		s := strconv.FormatFloat(v, 'f', -1, 64)
 		if !strings.Contains(s, ".") {
 			s += ".0"
 		}
