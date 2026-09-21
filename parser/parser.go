@@ -27,13 +27,19 @@ func (p *Parser) ErrorFound() bool {
 func (p *Parser) Parse() []Expr {
 	var expressions []Expr
 	for !p.isAtEnd() {
+		earlier := p.hadError
+		p.hadError = false // track whether *this* expression failed, not the whole file
+
 		expr := p.expression()
-		if expr != nil {
-			expressions = append(expressions, expr)
+		if !p.hadError {
+			p.consume(scanner.TOKEN_SEMI_COLON, "Expect ';' after expression.")
 		}
 		if p.hadError {
 			p.synchronize()
+		} else if expr != nil {
+			expressions = append(expressions, expr)
 		}
+		p.hadError = p.hadError || earlier
 	}
 	return expressions
 }
