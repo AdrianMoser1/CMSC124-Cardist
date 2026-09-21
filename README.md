@@ -200,7 +200,8 @@ Token(type=EOF, lexeme=, literal=null, line=7)
 ## Known limitations
 
 - No string escape sequences.
-- No multi-line strings — a newline inside a string is a scan error.
+- Decimals must have a present whole number followed by '.' then succeeding fractional numbers(Defense mechanism; poka-yoke)
+- Occuring valid characters before or after invalid characters are silently droppped ("nothing about a rejected file belongs on stdout")
 - No block comments.
 - `enemy`/`intent`/`artifact`/`elixir` are reserved keywords but their
   runtime semantics will be implemented later on
