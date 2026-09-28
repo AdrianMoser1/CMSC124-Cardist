@@ -6,6 +6,7 @@ import (
 	"cardist/scanner"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -18,6 +19,9 @@ func main() {
 		runTokenizeFile(args[1])
 	case len(args) == 2 && args[0] == "--parse":
 		runParseFile(args[1])
+	case len(args) == 1 && strings.HasPrefix(args[0], "--"):
+		fmt.Fprintln(os.Stderr, "Usage: run [--tokenize | --parse] [file]")
+		os.Exit(64)
 	case len(args) == 1:
 		runEcho(args[0])
 	default:
