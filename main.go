@@ -86,6 +86,11 @@ func runParseFile(path string) {
 	os.Exit(0)
 }
 
+// replParses selects what each REPL line is run through.
+// Lab 1 contract: false -> print the token stream of the line.
+// Lab 2 contract: true  -> print the AST (parenthesized prefix form) instead.
+const replParses = false
+
 func runPrompt() {
 	reader := bufio.NewScanner(os.Stdin)
 	printer := parser.NewAstPrinter()
@@ -96,15 +101,23 @@ func runPrompt() {
 		scn := scanner.NewScanner(line)
 		tokens := scn.ScanTokens()
 
+		// A bad line prints its diagnostic (on stderr) and returns the
+		// prompt; it never ends the session.
 		if !scn.ErrorFound() {
-			prs := parser.NewParser(tokens)
-			expressions := prs.Parse()
+			if replParses {
+				prs := parser.NewParser(tokens)
+				expressions := prs.Parse()
 
-			if !prs.ErrorFound() {
-				for _, expr := range expressions {
-					if expr != nil {
-						fmt.Println(printer.Print(expr))
+				if !prs.ErrorFound() {
+					for _, expr := range expressions {
+						if expr != nil {
+							fmt.Println(printer.Print(expr))
+						}
 					}
+				}
+			} else {
+				for _, tok := range tokens {
+					fmt.Println(tok)
 				}
 			}
 		}
