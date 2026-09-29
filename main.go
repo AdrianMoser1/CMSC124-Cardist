@@ -93,7 +93,7 @@ func runParseFile(path string) {
 // replParses selects what each REPL line is run through.
 // Lab 1 contract: false -> print the token stream of the line.
 // Lab 2 contract: true  -> print the AST (parenthesized prefix form) instead.
-const replParses = false
+const replParses = true
 
 func runPrompt() {
 	reader := bufio.NewScanner(os.Stdin)
