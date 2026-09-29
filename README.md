@@ -105,6 +105,8 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 | `!` | logical negation | unary | right | 8 |
 | `-` | arithmetic negation | unary | right | 8 |
 
+`=` is scanned and reserved for its precedence slot but not yet parsed in Lab 2 — there are no variable statements yet, so nothing exists for it to assign to. `expression` currently starts at `or`. It becomes real once assignment/variable statements land.
+
 ### Punctuation
 
 | Character | Token | Use |
@@ -146,7 +148,7 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 ## Whitespace and termination
 
 - Whitespace significant: no, beyond separating tokens
-- Statement terminator: none (newline-agnostic; block scoping does the work)
+- Statement terminator: none at the scanner/token level (newline-agnostic; block scoping does the work). `--parse` (Lab 2) does require `;` after every top-level expression — it's how a `.crd` file with multiple expressions gets split into separate parse trees, one printed line per expression.
 - Block delimiters: braces `{ }`
 - Grouping delimiters: parentheses `( )`
 
@@ -169,6 +171,37 @@ Scanning continues after an error so several problems are reported in one pass. 
 | lexical error (unterminated string, illegal character) | 65 |
 | syntax error | 65 (Lab 2) |
 | runtime error | 70 (Lab 3) |
+
+## Grammar
+
+Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals are quoted; non-terminals aren't. Rules are ordered from lowest precedence (`program`) to highest (`primary`); each rule delegates to the one below it, which is what makes precedence a consequence of call order rather than a checked table.
+
+```
+program    → ( expression ";" )* EOF
+
+expression → or
+or         → and ( "or" and )*
+and        → equality ( "and" equality )*
+equality   → comparison ( ( "!=" | "==" ) comparison )*
+comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
+term       → factor ( ( "-" | "+" ) factor )*
+factor     → unary ( ( "/" | "*" ) unary )*
+unary      → ( "!" | "-" ) unary
+           | primary
+primary    → NUMBER | STRING | IDENTIFIER
+           | "true" | "false" | "nil"
+           | "(" expression ")"
+```
+
+Notes on where this departs from the textbook grammar it's adapted from:
+
+- `or` and `and` are Cardist's own precedence levels, sitting above `equality`, matching the keyword operators in the Operators table. Lox's grammar doesn't have them at the expression level.
+- `and`/`or` are word tokens (`TOKEN_AND`, `TOKEN_OR`), not symbols — the grammar quotes them as literals the same way it quotes `"+"`, since they're still terminals from the parser's point of view.
+- `primary` accepts a bare `IDENTIFIER` as an expression. There's no `Variable`/assignment machinery yet (see the Operators table's note on `=`), so today an identifier prints and behaves exactly like a string literal holding its own name. This is a placeholder, not a resolved design — flag it before defense if asked how a bare name evaluates.
+- `=` (assignment) is deliberately absent from this grammar. It's reserved in the token list and shown in the Operators table for its intended precedence, but `expression` has no rule that reaches it yet.
+- Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
+
+`program`'s `;`-per-expression rule is what `./run --parse` uses to split a `.crd` file into separate trees, one printed line per expression (see Whitespace and termination).
 
 ## Design rationale
 Keywords split into two tiers: general-purpose control flow (`var`, `if`, `while`) and combat-domain vocabulary (`card`, `enemy`, `artifact`, `intent`, `deal`, `apply`). The domain tier is deliberately close to how PVE card games UI describes things — "deal 6 damage," "apply 2 weak"  so a rules author's script reads like a card's actual tooltip. `intent` was included to dictate what would the enemy do in the next turn given a unique cyclical actions per enemy, it's cheap to reserve as a keyword now and expensive to retrofit into existing tests once card scripts already use `intent` as a bare identifier. `elixir` and `artifact` share most of ‘card’'s shape (a name, a cost or trigger condition, and an effect block) but are kept as separate keywords rather than folded into one generic `item` block, since the design would treat trigger timing differently enough that conflating them now would make Lab 2's grammar harder to write correctly.
@@ -258,3 +291,5 @@ Token(type=EOF, lexeme=, literal=null, line=7)
 | README/scanner drift on strings | README said strings can't span lines; scanner allowed it and incremented the line counter in two places | Scanner now rejects a newline inside a string; only `scanToken` counts lines |
 | Error message drift | README showed `Unexpected character '$'.`; scanner printed `Unexpected character: $` | Scanner message now matches the README; multi-byte characters reported once |
 | REPL printed the wrong thing for Lab 1 | REPL printed parse trees instead of tokens | `replParses` switch in `main.go`; Lab 1 setting prints tokens |
+| README/parser drift on statement terminator | README said "Statement terminator: none"; `Parser.Parse()` requires `;` after every expression for `--parse` | Documented the split: none at the scanner level, `;` required for `--parse`'s expression-splitting rule |
+| README claimed `=` was parsed | Operators table listed assignment at precedence 1 with no caveat; `parser.go` has no assignment rule (`expression` calls `or` directly) | Noted in the table that `=` is scanned/reserved but deferred until variable statements exist |
