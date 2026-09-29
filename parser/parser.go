@@ -145,10 +145,6 @@ func (p *Parser) primary() Expr {
 		return &LiteralExpr{Value: p.previous().Literal}
 	}
 
-	if p.match(scanner.TOKEN_IDENTIFIER) {
-		return &LiteralExpr{Value: p.previous().Lexeme}
-	}
-
 	if p.match(scanner.TOKEN_LEFT_PAREN) {
 		expr := p.expression()
 		_, err := p.consume(scanner.TOKEN_RIGHT_PAREN, "Expect ')' after expression.")
