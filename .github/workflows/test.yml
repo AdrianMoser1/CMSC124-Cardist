@@ -29,6 +29,9 @@ jobs:
         chmod +x build.sh
         ./build.sh
 
+    - name: Run Lab 0 Tests
+      run: python3 run_tests.py tests/lab0
+      
     - name: Run Lab 1 Tests
       run: python3 run_tests.py tests/lab1
 
