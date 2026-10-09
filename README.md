@@ -22,13 +22,14 @@ A fresh clone needs the Go version in `go.mod` (or newer) on PATH; no other depe
 |---|---|
 | `./run <file>` | Lab 0 placeholder: prints the file back unchanged. Becomes program execution in Lab 4. |
 | `./run --tokenize <file>` | Scans the file and prints its token stream. |
+| `./run --parse <file>` | Scans and parses the file, then prints its AST, one expression per line, in parenthesized prefix form. |
 | `./run` | Starts the REPL: scans one line at a time and prints that line's tokens. A bad line prints its error and returns the prompt. |
 
 | Exit code | Meaning |
 |---|---|
-| 0 | clean run (token stream printed, or file echoed) |
+| 0 | clean run (token stream or AST printed, or file echoed) |
 | 64 | invalid command-line usage |
-| 65 | scanner rejected the input (unterminated string, illegal character) |
+| 65 | scanner or parser rejected the input (unterminated string, illegal character, or syntax error) |
 | 66 | file could not be read/opened |
 | 70 | reserved for a run that starts and then dies partway (runtime error); unused until Lab 3 |
 
@@ -157,6 +158,20 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 Token(type=CARD, lexeme=card, literal=null, line=1)
 ```
 Fields, in order: token type, the raw source text, the literal value (`null` for non-literal tokens), and the 1-indexed source line. String lexemes include their quotes and their literals do not; number literals print as Go prints a float64 (`1`, `1.5`).
+
+## Parse output format
+
+`--parse` prints one line per top-level expression, in prefix parenthesized form. The operator comes before its operands, so the tree's structure is readable without recognizing Cardist's precedence rules:
+
+```
+(+ 2.0 (* 3.0 4.0))
+```
+
+- A parenthesized group in the source becomes `(group <inner>)` in the output, since the printed tree has no parentheses of its own to reuse.
+- Numbers always print with a decimal point, even whole ones: `6` prints as `6.0`. This stays fixed for the rest of the semester per the Known limitations note on number-format drift.
+- Strings and identifiers print as their own bare text, with no surrounding quotes — see the Grammar section's note on identifiers for why that's currently ambiguous between the two.
+- A file is split into separate expressions by `;`; see Whitespace and termination.
+- A rejected file prints nothing to stdout — diagnostics go to stderr only, per Errors and diagnostics.
 
 ## Errors and diagnostics
 Message format (on stderr):
