@@ -3,6 +3,7 @@ package evaluator
 import (
 	"cardist/parser"
 	"cardist/scanner"
+	"fmt"
 )
 
 // RuntimeError carries the operator token for line number reporting
@@ -12,7 +13,7 @@ type RuntimeError struct {
 }
 
 func (e *RuntimeError) Error() string {
-	return e.Message
+	return fmt.Sprintf("[line %d] Runtime error: %s", e.Token.Line, e.Message)
 }
 
 type Evaluator struct{}
@@ -28,7 +29,9 @@ func (e *Evaluator) Evaluate(expr parser.Expr) (result any, err error) {
 			if runtimeErr, ok := r.(*RuntimeError); ok {
 				err = runtimeErr
 			} else {
-				panic(r) // re-throw unknown panics
+				// A host-side bug must never reach the user as a Go stack trace.
+				// Report it as an error (exit 70) instead of re-panicking.
+				err = fmt.Errorf("Runtime error: internal evaluator failure: %v", r)
 			}
 		}
 	}()
@@ -63,6 +66,25 @@ func (e *Evaluator) VisitUnary(expr *parser.UnaryExpr) any {
 
 // 4. Binary Operators (+, -, *, /, comparisons, equality)
 func (e *Evaluator) VisitBinary(expr *parser.BinaryExpr) any {
+	// Short-circuit operators: the right side may not be evaluated at all, so
+	// they are handled before the usual "evaluate both operands" step.
+	// Like Lox, they return the deciding operand itself, not a bool:
+	//   nil or "x" -> "x"      false and 1 -> false
+	switch expr.Operator.Type {
+	case scanner.TOKEN_OR:
+		left := expr.Left.Accept(e)
+		if e.isTruthy(left) {
+			return left
+		}
+		return expr.Right.Accept(e)
+	case scanner.TOKEN_AND:
+		left := expr.Left.Accept(e)
+		if !e.isTruthy(left) {
+			return left
+		}
+		return expr.Right.Accept(e)
+	}
+
 	// Post-order traversal: left evaluated first, then right
 	left := expr.Left.Accept(e)
 	right := expr.Right.Accept(e)
