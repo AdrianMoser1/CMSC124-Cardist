@@ -12,11 +12,16 @@ func NewAstPrinter() *AstPrinter {
 	return &AstPrinter{}
 }
 
+// to respond cleanly to any return of visitors from expr.go
 func (p *AstPrinter) Print(expr Expr) string {
 	if expr == nil {
 		return ""
 	}
-	return expr.Accept(p)
+	res := expr.Accept(p)
+	if s, ok := res.(string); ok {
+		return s
+	}
+	return ""
 }
 
 func (p *AstPrinter) VisitLiteral(expr *LiteralExpr) string {
