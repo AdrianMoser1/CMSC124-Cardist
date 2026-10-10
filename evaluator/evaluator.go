@@ -4,6 +4,7 @@ import (
 	"cardist/parser"
 	"cardist/scanner"
 	"fmt"
+	"strconv"
 )
 
 // RuntimeError carries the operator token for line number reporting
@@ -20,6 +21,21 @@ type Evaluator struct{}
 
 func NewEvaluator() *Evaluator {
 	return &Evaluator{}
+}
+
+func FormatValue(value any) string {
+	switch v := value.(type) {
+	case nil:
+		return "nil"
+	case bool:
+		return strconv.FormatBool(v)
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	case string:
+		return v
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 // Main evaluation entry point
