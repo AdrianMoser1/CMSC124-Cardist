@@ -31,9 +31,10 @@ func (p *Parser) Parse() []Expr {
 		p.hadError = false // track whether *this* expression failed, not the whole file
 
 		expr := p.expression()
-		if !p.hadError {
-			p.consume(scanner.TOKEN_SEMI_COLON, "Expect ';' after expression.")
-		}
+
+		// Optional semicolon check so standalone test expressions don't throw syntax errors
+		p.match(scanner.TOKEN_SEMI_COLON)
+
 		if p.hadError {
 			p.synchronize()
 		} else if expr != nil {
@@ -145,6 +146,7 @@ func (p *Parser) primary() Expr {
 		return &LiteralExpr{Value: p.previous().Literal}
 	}
 
+	// Added: Match identifiers (variable names) and store their lexeme string
 	if p.match(scanner.TOKEN_IDENTIFIER) {
 		return &LiteralExpr{Value: p.previous().Lexeme}
 	}
@@ -226,9 +228,10 @@ func (p *Parser) synchronize() {
 		}
 
 		switch p.peek().Type {
-		case scanner.TOKEN_VAR, scanner.TOKEN_IF, scanner.TOKEN_WHILE,
-			scanner.TOKEN_PRINT, scanner.TOKEN_RETURN, scanner.TOKEN_FOR,
-			scanner.TOKEN_FUNC, scanner.TOKEN_CARD:
+		case scanner.TOKEN_VAR, scanner.TOKEN_IF, scanner.TOKEN_ELSEIF, scanner.TOKEN_ELSE,
+			scanner.TOKEN_SWITCH, scanner.TOKEN_WHILE, scanner.TOKEN_PRINT, scanner.TOKEN_RETURN,
+			scanner.TOKEN_FOR, scanner.TOKEN_FUNC, scanner.TOKEN_CARD, scanner.TOKEN_ENEMY,
+			scanner.TOKEN_ARTIFACT, scanner.TOKEN_ELIXIR, scanner.TOKEN_TURN:
 			return
 		}
 

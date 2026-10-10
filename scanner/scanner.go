@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"unicode/utf8"
 )
 
 type TokenType int
@@ -17,6 +18,7 @@ const (
 	TOKEN_PLUS        // +
 	TOKEN_MINUS       // -
 	TOKEN_STAR        // *
+	TOKEN_SLASH       // / (division; "//" starts a comment instead)
 	TOKEN_EQUAL       // =
 	TOKEN_GREATER     // >
 	TOKEN_LESSER      // <
@@ -30,7 +32,6 @@ const (
 	TOKEN_EQUAL_EQUAL   //==
 	TOKEN_GREATER_EQUAL //>=
 	TOKEN_LESSER_EQUAL  //<=
-	TOKEN_SLASH         // /
 
 	//literals
 	TOKEN_IDENTIFIER
@@ -355,18 +356,17 @@ func (s *Scanner) number() {
 	s.addTokenWithLiteral(TOKEN_NUMBER, value)
 }
 
-// string consumes up to the closing quote. Per README, Cardist strings
-// may not span lines — a newline before the closing quote is reported as an error
+// string consumes up to the closing quote. Cardist strings may not span
+// lines (see README): hitting a newline before the closing quote is an
+// "Unterminated string." error. The newline itself is deliberately NOT
+// consumed here, so scanToken() stays the only place that increments s.line.
 // The literal value of the string excludes the bordering quotes.
 func (s *Scanner) string() {
-	for s.peek() != '"' && !s.isAtEnd() {
-		if s.peek() == '\n' {
-			s.line++ // Increment line counter for multi-line string support
-		}
+	for s.peek() != '"' && s.peek() != '\n' && !s.isAtEnd() {
 		s.advance()
 	}
 
-	if s.isAtEnd() {
+	if s.isAtEnd() || s.peek() == '\n' {
 		s.reportError(s.line, "Unterminated string.")
 		return
 	}
@@ -468,7 +468,11 @@ func (s *Scanner) scanToken() {
 		} else if isAlpha(c) {
 			s.identifier()
 		} else {
-			s.reportError(s.line, fmt.Sprintf("Unexpected character: %c", c))
+			// Decode the full UTF-8 character so a multi-byte symbol is
+			// reported once, as itself, instead of once per byte.
+			r, size := utf8.DecodeRuneInString(s.source[s.start:])
+			s.current = s.start + size
+			s.reportError(s.line, fmt.Sprintf("Unexpected character '%c'.", r))
 		}
 	}
 }

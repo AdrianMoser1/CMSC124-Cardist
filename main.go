@@ -6,6 +6,7 @@ import (
 	"cardist/scanner"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -18,6 +19,9 @@ func main() {
 		runTokenizeFile(args[1])
 	case len(args) == 2 && args[0] == "--parse":
 		runParseFile(args[1])
+	case len(args) == 1 && strings.HasPrefix(args[0], "--"):
+		fmt.Fprintln(os.Stderr, "Usage: run [--tokenize | --parse] [file]")
+		os.Exit(64)
 	case len(args) == 1:
 		runEcho(args[0])
 	default:
@@ -86,6 +90,11 @@ func runParseFile(path string) {
 	os.Exit(0)
 }
 
+// replParses selects what each REPL line is run through.
+// Lab 1 contract: false -> print the token stream of the line.
+// Lab 2 contract: true  -> print the AST (parenthesized prefix form) instead.
+const replParses = true
+
 func runPrompt() {
 	reader := bufio.NewScanner(os.Stdin)
 	printer := parser.NewAstPrinter()
@@ -96,15 +105,23 @@ func runPrompt() {
 		scn := scanner.NewScanner(line)
 		tokens := scn.ScanTokens()
 
+		// A bad line prints its diagnostic (on stderr) and returns the
+		// prompt; it never ends the session.
 		if !scn.ErrorFound() {
-			prs := parser.NewParser(tokens)
-			expressions := prs.Parse()
+			if replParses {
+				prs := parser.NewParser(tokens)
+				expressions := prs.Parse()
 
-			if !prs.ErrorFound() {
-				for _, expr := range expressions {
-					if expr != nil {
-						fmt.Println(printer.Print(expr))
+				if !prs.ErrorFound() {
+					for _, expr := range expressions {
+						if expr != nil {
+							fmt.Println(printer.Print(expr))
+						}
 					}
+				}
+			} else {
+				for _, tok := range tokens {
+					fmt.Println(tok)
 				}
 			}
 		}
