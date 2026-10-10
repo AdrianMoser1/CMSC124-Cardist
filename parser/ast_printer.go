@@ -24,7 +24,7 @@ func (p *AstPrinter) Print(expr Expr) string {
 	return ""
 }
 
-func (p *AstPrinter) VisitLiteral(expr *LiteralExpr) string {
+func (p *AstPrinter) VisitLiteral(expr *LiteralExpr) any {
 	if expr.Value == nil {
 		return "nil"
 	}
@@ -44,15 +44,15 @@ func (p *AstPrinter) VisitLiteral(expr *LiteralExpr) string {
 	}
 }
 
-func (p *AstPrinter) VisitUnary(expr *UnaryExpr) string {
+func (p *AstPrinter) VisitUnary(expr *UnaryExpr) any {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Right)
 }
 
-func (p *AstPrinter) VisitBinary(expr *BinaryExpr) string {
+func (p *AstPrinter) VisitBinary(expr *BinaryExpr) any {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }
 
-func (p *AstPrinter) VisitGrouping(expr *GroupingExpr) string {
+func (p *AstPrinter) VisitGrouping(expr *GroupingExpr) any {
 	return p.parenthesize("group", expr.Expression)
 }
 
@@ -64,7 +64,9 @@ func (p *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 
 	for _, expr := range exprs {
 		builder.WriteString(" ")
-		builder.WriteString(expr.Accept(p))
+		if s, ok := expr.Accept(p).(string); ok {
+			builder.WriteString(s)
+		}
 	}
 
 	builder.WriteString(")")
