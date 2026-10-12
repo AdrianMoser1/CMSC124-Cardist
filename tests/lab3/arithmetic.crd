@@ -1,0 +1,16 @@
+// Every expected value was worked out by hand, not copied from output.
+3 + 4; // expect: 7
+10 - 4 - 3; // expect: 3
+2 + 3 * 4; // expect: 14
+(2 + 3) * 4; // expect: 20
+2 * 3 + 4 * 5; // expect: 26
+10 - 2 * 3 + 8 / 4; // expect: 6
+100 / 4 / 5; // expect: 5
+7 / 2; // expect: 3.5
+1.5 + 2.5; // expect: 4
+0.5 * 4; // expect: 2
+-3 + 5; // expect: 2
+-(-4); // expect: 4
+-(2 + 3); // expect: -5
+(1 + 2) * (3 + 4) - 5; // expect: 16
+((1 + 2) * 3 - 4) / 5; // expect: 1
