@@ -1,0 +1,8 @@
+// Truthiness rule: only false and nil are falsey.
+!true; // expect: false
+!false; // expect: true
+!nil; // expect: true
+!"hello"; // expect: false
+!""; // expect: false
+!0; // expect: false
+!!0; // expect: true

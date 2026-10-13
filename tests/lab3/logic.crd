@@ -1,0 +1,10 @@
+// and / or short-circuit and return the deciding operand.
+true and false; // expect: false
+true and 2; // expect: 2
+false and 1; // expect: false
+nil and 1; // expect: nil
+nil or "x"; // expect: x
+1 or 2; // expect: 1
+false or false; // expect: false
+true or 1 / 0; // expect: true
+false and 1 / 0; // expect: false

@@ -2,12 +2,15 @@ package main
 
 import (
 	"bufio"
+	"cardist/evaluator"
 	"cardist/parser"
 	"cardist/scanner"
 	"fmt"
 	"os"
 	"strings"
 )
+
+const usage = "Usage: run [--tokenize | --parse | --eval] [file]"
 
 func main() {
 	args := os.Args[1:]
@@ -19,13 +22,15 @@ func main() {
 		runTokenizeFile(args[1])
 	case len(args) == 2 && args[0] == "--parse":
 		runParseFile(args[1])
+	case len(args) == 2 && args[0] == "--eval":
+		runEvalFile(args[1])
 	case len(args) == 1 && strings.HasPrefix(args[0], "--"):
-		fmt.Fprintln(os.Stderr, "Usage: run [--tokenize | --parse] [file]")
+		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(64)
 	case len(args) == 1:
 		runEcho(args[0])
 	default:
-		fmt.Fprintln(os.Stderr, "Usage: run [--tokenize | --parse] [file]")
+		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(64)
 	}
 }
@@ -90,14 +95,59 @@ func runParseFile(path string) {
 	os.Exit(0)
 }
 
-// replParses selects what each REPL line is run through.
-// Lab 1 contract: false -> print the token stream of the line.
-// Lab 2 contract: true  -> print the AST (parenthesized prefix form) instead.
-const replParses = true
+// runEvalFile is the Lab 3 tested path: ./run --eval <file>.
+//
+// Order matters for the exit codes:
+//  1. scan + parse the WHOLE file first; any failure there is a static error
+//     (exit 65) and nothing is evaluated or printed.
+//  2. only then evaluate, printing each value as soon as it is computed, so
+//     output produced before a runtime error still reaches stdout.
+//  3. the first runtime error goes to stderr and the process exits 70.
+func runEvalFile(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read file %q: %v\n", path, err)
+		os.Exit(66)
+	}
 
+	scn := scanner.NewScanner(string(data))
+	tokens := scn.ScanTokens()
+	if scn.ErrorFound() {
+		os.Exit(65)
+	}
+
+	prs := parser.NewParser(tokens)
+	expressions := prs.Parse()
+	if prs.ErrorFound() {
+		os.Exit(65)
+	}
+
+	ev := evaluator.NewEvaluator()
+	for _, expr := range expressions {
+		if expr == nil {
+			continue
+		}
+		value, err := ev.Evaluate(expr)
+		if err != nil {
+			// err.Error() is already "[line N] Runtime error: <message>".
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(70)
+		}
+		fmt.Println(evaluator.FormatValue(value))
+	}
+	os.Exit(0)
+}
+
+// runPrompt is the REPL. Lab 3 contract: each line is scanned, parsed and
+// EVALUATED, and the computed value is printed. (Lab 1 printed tokens and
+// Lab 2 printed the AST; those are still reachable via --tokenize / --parse.)
+//
+// File mode and the REPL share the same Evaluate call and FormatValue; they
+// differ only in what happens after an error: the file exits 70, the REPL
+// prints the diagnostic and returns the prompt.
 func runPrompt() {
 	reader := bufio.NewScanner(os.Stdin)
-	printer := parser.NewAstPrinter()
+	ev := evaluator.NewEvaluator()
 	fmt.Print("> ")
 
 	for reader.Scan() {
@@ -108,20 +158,20 @@ func runPrompt() {
 		// A bad line prints its diagnostic (on stderr) and returns the
 		// prompt; it never ends the session.
 		if !scn.ErrorFound() {
-			if replParses {
-				prs := parser.NewParser(tokens)
-				expressions := prs.Parse()
+			prs := parser.NewParser(tokens)
+			expressions := prs.Parse()
 
-				if !prs.ErrorFound() {
-					for _, expr := range expressions {
-						if expr != nil {
-							fmt.Println(printer.Print(expr))
-						}
+			if !prs.ErrorFound() {
+				for _, expr := range expressions {
+					if expr == nil {
+						continue
 					}
-				}
-			} else {
-				for _, tok := range tokens {
-					fmt.Println(tok)
+					value, err := ev.Evaluate(expr)
+					if err != nil {
+						fmt.Fprintln(os.Stderr, err)
+						break // abandon the rest of this line but keep the session
+					}
+					fmt.Println(evaluator.FormatValue(value))
 				}
 			}
 		}

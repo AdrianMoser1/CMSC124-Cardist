@@ -1,0 +1,10 @@
+// Each literal evaluates to itself. Statements end in ";" (see README).
+123; // expect: 123
+0; // expect: 0
+1.5; // expect: 1.5
+"hello"; // expect: hello
+"hello world"; // expect: hello world
+true; // expect: true
+false; // expect: false
+nil; // expect: nil
+(42); // expect: 42

@@ -1,0 +1,7 @@
+// "+" concatenates two strings. The result prints without quotes.
+"a" + "b"; // expect: ab
+"hello" + " " + "world"; // expect: hello world
+("a" + "b") + "c"; // expect: abc
+"Strike" + "+"; // expect: Strike+
+"a" + "b" == "ab"; // expect: true
+"a" + "b" == "ba"; // expect: false
