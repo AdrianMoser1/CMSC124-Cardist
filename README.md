@@ -23,7 +23,8 @@ A fresh clone needs the Go version in `go.mod` (or newer) on PATH; no other depe
 | `./run <file>` | Lab 0 placeholder: prints the file back unchanged. Becomes program execution in Lab 4. |
 | `./run --tokenize <file>` | Scans the file and prints its token stream. |
 | `./run --parse <file>` | Scans and parses the file, then prints its AST, one expression per line, in parenthesized prefix form. |
-| `./run` | Starts the REPL: scans one line at a time and prints that line's tokens. A bad line prints its error and returns the prompt. |
+| `./run --eval <file>` | Evaluates each expression and prints its value. |
+| `./run` | Starts the REPL: evaluates each line and prints its values. A bad line prints its error and returns the prompt. |
 
 | Exit code | Meaning |
 |---|---|
@@ -31,7 +32,7 @@ A fresh clone needs the Go version in `go.mod` (or newer) on PATH; no other depe
 | 64 | invalid command-line usage |
 | 65 | scanner or parser rejected the input (unterminated string, illegal character, or syntax error) |
 | 66 | file could not be read/opened |
-| 70 | reserved for a run that starts and then dies partway (runtime error); unused until Lab 3 |
+| 70 | evaluation started and stopped at a runtime error |
 
 ## File extension
 
@@ -49,7 +50,7 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 | Arithmetic | `PLUS` `MINUS` `STAR` `SLASH` | the four arithmetic operators |
 | Comparison / logic | `BANG` `BANG_EQUAL` `EQUAL_EQUAL` `GREATER` `GREATER_EQUAL` `LESSER` `LESSER_EQUAL` | comparisons and logical negation |
 | Assignment | `EQUAL` | assignment, and `cost = 1` style declarations |
-| Punctuation | `COMMA` `COLON` `SEMI_COLON` | `COMMA` for argument/parameter lists; `COLON` and `SEMI_COLON` are scanned and reserved (no grammar rule uses them yet) |
+| Punctuation | `COMMA` `COLON` `SEMI_COLON` | `COMMA` for future argument/parameter lists; `COLON` reserved; `SEMI_COLON` optionally terminates an expression |
 | Literals | `IDENTIFIER` `STRING` `NUMBER` | names, text, and numbers |
 | General keywords | `VAR` `IF` `ELSE` `ELSEIF` `SWITCH` `WHILE` `FOR` `BREAK` `CONTINUE` `FUNC` `RETURN` `PRINT` `TRUE` `FALSE` `NIL` `AND` `OR` | general-purpose control flow and values |
 | Domain keywords | `CARD` `ENERGY` `COST` `ENEMY` `INTENT` `ARTIFACT` `ELIXIR` `DEAL` `BLOCK` `APPLY` `DRAW` `BANISH` `TURN` `PLAYER` `EFFECT` | combat vocabulary (see design rationale) |
@@ -116,7 +117,7 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 | `{` `}` | LEFT_BRACE, RIGHT_BRACE | blocks |
 | `,` | COMMA | separator in lists |
 | `:` | COLON | reserved |
-| `;` | SEMI_COLON | reserved |
+| `;` | SEMI_COLON | optional expression terminator |
 
 ### Literals
 
@@ -149,7 +150,7 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 ## Whitespace and termination
 
 - Whitespace significant: no, beyond separating tokens
-- Statement terminator: none at the scanner/token level (newline-agnostic; block scoping does the work). `--parse` (Lab 2) does require `;` after every top-level expression — it's how a `.crd` file with multiple expressions gets split into separate parse trees, one printed line per expression.
+- Expression separation: the parser consumes a complete expression, optionally consumes one `;`, then starts the next expression. Newlines are whitespace, not separators. Use `;` between expressions to make boundaries explicit; `1 -2` is one subtraction expression, while `1; -2;` is two expressions.
 - Block delimiters: braces `{ }`
 - Grouping delimiters: parentheses `( )`
 
@@ -170,7 +171,7 @@ Fields, in order: token type, the raw source text, the literal value (`null` for
 - A parenthesized group in the source becomes `(group <inner>)` in the output, since the printed tree has no parentheses of its own to reuse.
 - Numbers always print with a decimal point, even whole ones: `6` prints as `6.0`. This stays fixed for the rest of the semester per the Known limitations note on number-format drift.
 - Strings and identifiers print as their own bare text, with no surrounding quotes — see the Grammar section's note on identifiers for why that's currently ambiguous between the two.
-- A file is split into separate expressions by `;`; see Whitespace and termination.
+- A file is parsed into one `Program` AST root containing its expressions in source order; the printer emits one line per child expression. See Whitespace and termination for boundaries.
 - A rejected file prints nothing to stdout — diagnostics go to stderr only, per Errors and diagnostics.
 
 ## Errors and diagnostics
@@ -192,7 +193,7 @@ Scanning continues after an error so several problems are reported in one pass. 
 Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals are quoted; non-terminals aren't. Rules are ordered from lowest precedence (`program`) to highest (`primary`); each rule delegates to the one below it, which is what makes precedence a consequence of call order rather than a checked table.
 
 ```
-program    → ( expression ";" )* EOF
+program    → ( expression ";"? )* EOF
 
 expression → or
 or         → and ( "or" and )*
@@ -216,7 +217,40 @@ Notes on where this departs from the textbook grammar it's adapted from:
 - `=` (assignment) is deliberately absent from this grammar. It's reserved in the token list and shown in the Operators table for its intended precedence, but `expression` has no rule that reaches it yet.
 - Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
 
-`program`'s `;`-per-expression rule is what `./run --parse` uses to split a `.crd` file into separate trees, one printed line per expression (see Whitespace and termination).
+`program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
+
+## Semantics
+
+### Values and traversal
+
+Runtime values use Go `any`: numbers are `float64`, strings are `string`, booleans are `bool`, and `nil` represents absence. `Expr.Accept` and visitor methods return `any` so the AST printer can return text while the evaluator returns runtime values. Operators retain their scanner token, including `Line`, for diagnostics.
+
+The evaluator walks each expression AST recursively. Literals return their value; grouping returns its inner value. Unary operators evaluate their operand first. Ordinary binary operators evaluate the left operand, then the right, then apply the operator. Program expressions run in source order. There are no variables yet: a bare identifier currently evaluates as the string containing its name.
+
+### Operators and type checks
+
+| Operators | Behavior |
+|---|---|
+| `+` | Adds two numbers or concatenates two strings. Mixed types are errors; no implicit conversion. |
+| `-`, `*`, `/` | Require two numbers. Division by zero is a runtime error. |
+| Unary `-` | Requires a number and negates it. |
+| `<`, `<=`, `>`, `>=` | Require two numbers and return a boolean. |
+| `==`, `!=` | Compare values of matching types; unlike types are unequal. `nil == nil` is true. Strings compare by content. |
+| `!` | Negates the operand's truthiness. |
+| `and` | Returns the left operand if falsey; otherwise evaluates and returns the right operand. |
+| `or` | Returns the left operand if truthy; otherwise evaluates and returns the right operand. |
+
+Only `false` and `nil` are falsey. Everything else, including `0` and `""`, is truthy. `and` and `or` short-circuit and return an operand, not necessarily a boolean: `true or 1 / 0` returns `true` without a division error.
+
+### Value printing
+
+`--eval` and the REPL share `evaluator.FormatValue`. Whole numbers print without `.0` (`5`); fractional numbers retain their fraction (`3.5`). Booleans print `true` or `false`, nil prints `nil`, and strings print without quotes. Each result ends with a newline. `--parse` keeps its existing AST format, including `.0` for whole-number literals.
+
+### Errors and execution
+
+File mode scans and parses the whole file before evaluation. A lexical or syntax error produces diagnostics on stderr, no stdout, and exit 65. A runtime error stops execution at the first failing expression, reports `[line N] Runtime error: <message>` on stderr, and exits 70. Values printed before that runtime error remain on stdout; subsequent expressions do not run.
+
+Type errors report `Operand must be a number.`, `Operands must be numbers.`, or, for `+`, `Operands must be two numbers or two strings.` Division by zero reports `Division by zero.` The REPL reports errors, abandons the rest of the current input line, and accepts the next line.
 
 ## Design rationale
 Keywords split into two tiers: general-purpose control flow (`var`, `if`, `while`) and combat-domain vocabulary (`card`, `enemy`, `artifact`, `intent`, `deal`, `apply`). The domain tier is deliberately close to how PVE card games UI describes things — "deal 6 damage," "apply 2 weak"  so a rules author's script reads like a card's actual tooltip. `intent` was included to dictate what would the enemy do in the next turn given a unique cyclical actions per enemy, it's cheap to reserve as a keyword now and expensive to retrofit into existing tests once card scripts already use `intent` as a bare identifier. `elixir` and `artifact` share most of ‘card’'s shape (a name, a cost or trigger condition, and an effect block) but are kept as separate keywords rather than folded into one generic `item` block, since the design would treat trigger timing differently enough that conflating them now would make Lab 2's grammar harder to write correctly.
@@ -238,8 +272,13 @@ Run locally with:
 ```bash
 curl -sSL https://raw.githubusercontent.com/WhiteLicorice/cmsc-124-harness/v1.1/run_tests.py -o run_tests.py
 ./build.sh
+python3 run_tests.py tests/lab0
 python3 run_tests.py tests/lab1
+python3 run_tests.py tests/lab2
+python3 run_tests.py tests/lab3
 ```
+
+Lab 3 uses inline `// expect: value`, `// expect error: message` (exit 65), and `// expect runtime error: message` (exit 70). Error annotations contain message text without line prefixes. Keep one error annotation per file. To verify an assertion is active, temporarily change an expected value, confirm the harness fails, restore it, and rerun. CI runs all four folders.
 
 ## Sample code
 
