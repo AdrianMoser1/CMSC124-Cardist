@@ -2,6 +2,11 @@ package parser
 
 import "cardist/scanner"
 
+// Program is the AST root containing the file's expressions in source order.
+type Program struct {
+	Expressions []Expr
+}
+
 type Expr interface {
 	Accept(visitor Visitor) any
 }

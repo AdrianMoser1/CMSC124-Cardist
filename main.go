@@ -80,14 +80,14 @@ func runParseFile(path string) {
 	}
 
 	prs := parser.NewParser(tokens)
-	expressions := prs.Parse()
+	program := prs.Parse()
 
 	if prs.ErrorFound() {
 		os.Exit(65)
 	}
 
 	printer := parser.NewAstPrinter()
-	for _, expr := range expressions {
+	for _, expr := range program.Expressions {
 		if expr != nil {
 			fmt.Println(printer.Print(expr))
 		}
@@ -117,13 +117,13 @@ func runEvalFile(path string) {
 	}
 
 	prs := parser.NewParser(tokens)
-	expressions := prs.Parse()
+	program := prs.Parse()
 	if prs.ErrorFound() {
 		os.Exit(65)
 	}
 
 	ev := evaluator.NewEvaluator()
-	for _, expr := range expressions {
+	for _, expr := range program.Expressions {
 		if expr == nil {
 			continue
 		}
@@ -159,10 +159,10 @@ func runPrompt() {
 		// prompt; it never ends the session.
 		if !scn.ErrorFound() {
 			prs := parser.NewParser(tokens)
-			expressions := prs.Parse()
+			program := prs.Parse()
 
 			if !prs.ErrorFound() {
-				for _, expr := range expressions {
+				for _, expr := range program.Expressions {
 					if expr == nil {
 						continue
 					}

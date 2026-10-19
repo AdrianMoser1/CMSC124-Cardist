@@ -24,8 +24,8 @@ func (p *Parser) ErrorFound() bool {
 	return p.hadError
 }
 
-func (p *Parser) Parse() []Expr {
-	var expressions []Expr
+func (p *Parser) Parse() *Program {
+	program := &Program{}
 	for !p.isAtEnd() {
 		earlier := p.hadError
 		p.hadError = false // track whether *this* expression failed, not the whole file
@@ -38,11 +38,11 @@ func (p *Parser) Parse() []Expr {
 		if p.hadError {
 			p.synchronize()
 		} else if expr != nil {
-			expressions = append(expressions, expr)
+			program.Expressions = append(program.Expressions, expr)
 		}
 		p.hadError = p.hadError || earlier
 	}
-	return expressions
+	return program
 }
 
 func (p *Parser) expression() Expr {
