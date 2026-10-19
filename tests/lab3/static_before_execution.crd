@@ -1,0 +1,3 @@
+// Parsing the whole file fails before even the first value can print.
+1 + 1;
+(2 + 3; // expect error: Expect ')' after expression.

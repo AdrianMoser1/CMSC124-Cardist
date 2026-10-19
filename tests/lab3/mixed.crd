@@ -1,0 +1,2 @@
+// 2 + 3*4 = 14; 20/2 = 10; both comparisons are true.
+(2 + 3 * 4 >= 14) == !(20 / 2 < 10) and nil or "pass"; // expect: pass

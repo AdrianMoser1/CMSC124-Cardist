@@ -1,0 +1,16 @@
+// Equality compares values without coercing unlike types.
+1 == 1; // expect: true
+1 != 2; // expect: true
+1 != 1; // expect: false
+"ab" == "a" + "b"; // expect: true
+"ab" != "ac"; // expect: true
+true == true; // expect: true
+true == false; // expect: false
+nil == nil; // expect: true
+nil != nil; // expect: false
+nil == false; // expect: false
+1 == "1"; // expect: false
+1 == true; // expect: false
+0 == false; // expect: false
+nil != 0; // expect: true
+"true" != true; // expect: true
