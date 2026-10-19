@@ -291,6 +291,7 @@ Token(type=EOF, lexeme=, literal=null, line=7)
 | Activity | What changed in the language |
 |---|---|
 | Lab 1 | Scanner, initial keyword list, token format frozen. |
+| Lab 2 | Parser, AST printer,--parse, and the ; expression terminator. |
 
 ## Bug log
 
