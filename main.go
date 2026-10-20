@@ -87,10 +87,8 @@ func runParseFile(path string) {
 	}
 
 	printer := parser.NewAstPrinter()
-	for _, expr := range program.Expressions {
-		if expr != nil {
-			fmt.Println(printer.Print(expr))
-		}
+	if out := printer.Print(program); out != "" {
+		fmt.Println(out)
 	}
 	os.Exit(0)
 }
@@ -123,19 +121,19 @@ func runEvalFile(path string) {
 	}
 
 	ev := evaluator.NewEvaluator()
-	for _, expr := range program.Expressions {
-		if expr == nil {
-			continue
-		}
-		value, err := ev.Evaluate(expr)
-		if err != nil {
-			// err.Error() is already "[line N] Runtime error: <message>".
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(70)
-		}
-		fmt.Println(evaluator.FormatValue(value))
+	ev.Emit = printValue
+	// One call walks the whole tree from the Program root.
+	if _, err := ev.Evaluate(program); err != nil {
+		// err.Error() is already "[line N] Runtime error: <message>".
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(70)
 	}
 	os.Exit(0)
+}
+
+// printValue is the single place a computed value reaches stdout.
+func printValue(value any) {
+	fmt.Println(evaluator.FormatValue(value))
 }
 
 // runPrompt is the REPL. Lab 3 contract: each line is scanned, parsed and
@@ -148,6 +146,7 @@ func runEvalFile(path string) {
 func runPrompt() {
 	reader := bufio.NewScanner(os.Stdin)
 	ev := evaluator.NewEvaluator()
+	ev.Emit = printValue
 	fmt.Print("> ")
 
 	for reader.Scan() {
@@ -162,16 +161,9 @@ func runPrompt() {
 			program := prs.Parse()
 
 			if !prs.ErrorFound() {
-				for _, expr := range program.Expressions {
-					if expr == nil {
-						continue
-					}
-					value, err := ev.Evaluate(expr)
-					if err != nil {
-						fmt.Fprintln(os.Stderr, err)
-						break // abandon the rest of this line but keep the session
-					}
-					fmt.Println(evaluator.FormatValue(value))
+				if _, err := ev.Evaluate(program); err != nil {
+					// Print the diagnostic and return the prompt; the session lives on.
+					fmt.Fprintln(os.Stderr, err)
 				}
 			}
 		}

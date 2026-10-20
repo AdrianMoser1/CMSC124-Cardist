@@ -24,6 +24,20 @@ func (p *AstPrinter) Print(expr Expr) string {
 	return ""
 }
 
+// VisitProgram prints each child tree on its own line, in source order.
+func (p *AstPrinter) VisitProgram(program *Program) any {
+	var lines []string
+	for _, expr := range program.Expressions {
+		if expr == nil {
+			continue
+		}
+		if s, ok := expr.Accept(p).(string); ok {
+			lines = append(lines, s)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 func (p *AstPrinter) VisitLiteral(expr *LiteralExpr) any {
 	if expr.Value == nil {
 		return "nil"

@@ -16,7 +16,12 @@ func (e *RuntimeError) Error() string {
 	return fmt.Sprintf("[line %d] Runtime error: %s", e.Token.Line, e.Message)
 }
 
-type Evaluator struct{}
+type Evaluator struct {
+	// Emit is called with the value of each top-level expression as soon as it
+	// is computed. Streaming it (instead of returning a list) means output
+	// produced before a runtime error still reaches stdout.
+	Emit func(value any)
+}
 
 func NewEvaluator() *Evaluator {
 	return &Evaluator{}
@@ -37,6 +42,20 @@ func (e *Evaluator) Evaluate(expr parser.Expr) (result any, err error) {
 	}()
 
 	return expr.Accept(e), nil
+}
+
+// 0. Program (root): evaluate each child tree in source order.
+func (e *Evaluator) VisitProgram(program *parser.Program) any {
+	for _, expr := range program.Expressions {
+		if expr == nil {
+			continue
+		}
+		value := expr.Accept(e)
+		if e.Emit != nil {
+			e.Emit(value)
+		}
+	}
+	return nil
 }
 
 // 1. Literals
