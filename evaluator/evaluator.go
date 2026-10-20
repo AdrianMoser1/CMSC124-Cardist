@@ -4,7 +4,6 @@ import (
 	"cardist/parser"
 	"cardist/scanner"
 	"fmt"
-	"strconv"
 )
 
 // RuntimeError carries the operator token for line number reporting
@@ -21,21 +20,6 @@ type Evaluator struct{}
 
 func NewEvaluator() *Evaluator {
 	return &Evaluator{}
-}
-
-func FormatValue(value any) string {
-	switch v := value.(type) {
-	case nil:
-		return "nil"
-	case bool:
-		return strconv.FormatBool(v)
-	case float64:
-		return strconv.FormatFloat(v, 'f', -1, 64)
-	case string:
-		return v
-	default:
-		return fmt.Sprintf("%v", v)
-	}
 }
 
 // Main evaluation entry point
@@ -77,7 +61,7 @@ func (e *Evaluator) VisitUnary(expr *parser.UnaryExpr) any {
 		return !e.isTruthy(right)
 	}
 
-	return nil
+	panic(&RuntimeError{Token: expr.Operator, Message: "Unsupported unary operator."})
 }
 
 // 4. Binary Operators (+, -, *, /, comparisons, equality)
@@ -154,7 +138,8 @@ func (e *Evaluator) VisitBinary(expr *parser.BinaryExpr) any {
 		return !e.isEqual(left, right)
 	}
 
-	return nil
+	// An operator the evaluator doesn't know is an evaluator bug, not a nil result.
+	panic(&RuntimeError{Token: expr.Operator, Message: "Unsupported binary operator."})
 }
 
 // --- Helper Functions ---
