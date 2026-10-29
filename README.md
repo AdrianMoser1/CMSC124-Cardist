@@ -20,7 +20,7 @@ A fresh clone needs the Go version in `go.mod` (or newer) on PATH; no other depe
 
 | Command | What it does |
 |---|---|
-| `./run <file>` | Lab 0 placeholder: prints the file back unchanged. Becomes program execution in Lab 4. |
+| `./run <file>` | Executes a script. Only explicit print statements produce output. |
 | `./run --tokenize <file>` | Scans the file and prints its token stream. |
 | `./run --parse <file>` | Scans and parses the file, then prints its AST, one expression per line, in parenthesized prefix form. |
 | `./run --eval <file>` | Scans, parses and evaluates the file, printing the value of each expression, one per line. |
@@ -194,7 +194,7 @@ Runtime errors print on stderr in the form `[line 3] Runtime error: Operands mus
 
 ## Grammar
 
-Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals are quoted; non-terminals aren't. Rules are ordered from lowest precedence (`program`) to highest (`primary`); each rule delegates to the one below it, which is what makes precedence a consequence of call order rather than a checked table.
+Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals are quoted; non-terminals aren't. Rules are ordered from lowest precedence (`program`) to highest (`primary`); each rule delegates to the one below it, which is what makes precedence a consequence of call order rather than a checked table. 
 
 ```
 program    → ( expression ";" )* EOF
@@ -211,9 +211,18 @@ unary      → ( "!" | "-" ) unary
 primary    → NUMBER | STRING | IDENTIFIER
            | "true" | "false" | "nil"
            | "(" expression ")"
-```
+           script    → statement* EOF
+statement  → printStmt | exprStmt
+printStmt  → "print" expression ";"
+exprStmt   → expression ";"
 
-Notes on where this departs from the textbook grammar it's adapted from:
+```
+Plain file execution uses script, whose statements require semicolons.
+print evaluates an expression and prints its value. An expression
+statement evaluates its expression and discards the result.
+
+The existing expression-program grammar remains in use for --parse
+and --eval, preserving the earlier labs' behavior.
 
 - `or` and `and` are Cardist's own precedence levels, sitting above `equality`, matching the keyword operators in the Operators table. Lox's grammar doesn't have them at the expression level.
 - `and`/`or` are word tokens (`TOKEN_AND`, `TOKEN_OR`), not symbols — the grammar quotes them as literals the same way it quotes `"+"`, since they're still terminals from the parser's point of view.

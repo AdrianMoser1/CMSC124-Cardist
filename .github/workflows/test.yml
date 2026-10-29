@@ -40,3 +40,6 @@ jobs:
 
     - name: Run Lab 3 Tests
       run: python3 run_tests.py tests/lab3
+
+    - name: Run Lab 4 Tests
+      run: python3 run_tests.py tests/lab4
