@@ -1,11 +1,10 @@
 package parser
 
-
-type Stmt interface { 
+type Stmt interface {
 	stmtNode()
 }
 
-//root of a statement-based program
+// root of a statement-based program
 type Script struct {
 	Statements []Stmt
 }
@@ -16,9 +15,8 @@ type PrintStmt struct {
 
 func (*PrintStmt) stmtNode() {}
 
-type ExpressionStmt struct{
+type ExpressionStmt struct {
 	Expression Expr
 }
 
-func (*ExpressionStmt) stmtNode {}
-
+func (*ExpressionStmt) stmtNode() {}
