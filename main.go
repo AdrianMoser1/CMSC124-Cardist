@@ -28,21 +28,47 @@ func main() {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(64)
 	case len(args) == 1:
-		runEcho(args[0])
+		runScriptFile(args[0])
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(64)
 	}
 }
 
-func runEcho(path string) {
+func runScriptFile(path string) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: could not read file %q: %v\n", path, err)
+		fmt.Fprintf(
+			os.Stderr,
+			"Error: could not read file %q: %v\n",
+			path,
+			err,
+		)
 		os.Exit(66)
 	}
-	fmt.Print(string(data))
-	os.Exit(0)
+
+	scn := scanner.NewScanner(string(data))
+	tokens := scn.ScanTokens()
+
+	if scn.ErrorFound() {
+		os.Exit(65)
+	}
+
+	prs := parser.NewParser(tokens)
+	script := prs.ParseScript()
+
+	// Parse the whole script before executing any statements.
+	if prs.ErrorFound() {
+		os.Exit(65)
+	}
+
+	ev := evaluator.NewEvaluator()
+	ev.Emit = printValue
+
+	if err := ev.ExecuteScript(script); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(70)
+	}
 }
 
 func runTokenizeFile(path string) {
