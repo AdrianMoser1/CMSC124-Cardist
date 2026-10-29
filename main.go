@@ -28,21 +28,47 @@ func main() {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(64)
 	case len(args) == 1:
-		runEcho(args[0])
+		runScriptFile(args[0])
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(64)
 	}
 }
 
-func runEcho(path string) {
+func runScriptFile(path string) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: could not read file %q: %v\n", path, err)
+		fmt.Fprintf(
+			os.Stderr,
+			"Error: could not read file %q: %v\n",
+			path,
+			err,
+		)
 		os.Exit(66)
 	}
-	fmt.Print(string(data))
-	os.Exit(0)
+
+	scn := scanner.NewScanner(string(data))
+	tokens := scn.ScanTokens()
+
+	if scn.ErrorFound() {
+		os.Exit(65)
+	}
+
+	prs := parser.NewParser(tokens)
+	script := prs.ParseScript()
+
+	// Parse the whole script before executing any statements.
+	if prs.ErrorFound() {
+		os.Exit(65)
+	}
+
+	ev := evaluator.NewEvaluator()
+	ev.Emit = printValue
+
+	if err := ev.ExecuteScript(script); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(70)
+	}
 }
 
 func runTokenizeFile(path string) {
@@ -80,17 +106,15 @@ func runParseFile(path string) {
 	}
 
 	prs := parser.NewParser(tokens)
-	expressions := prs.Parse()
+	program := prs.Parse()
 
 	if prs.ErrorFound() {
 		os.Exit(65)
 	}
 
 	printer := parser.NewAstPrinter()
-	for _, expr := range expressions {
-		if expr != nil {
-			fmt.Println(printer.Print(expr))
-		}
+	if out := printer.Print(program); out != "" {
+		fmt.Println(out)
 	}
 	os.Exit(0)
 }
@@ -117,25 +141,25 @@ func runEvalFile(path string) {
 	}
 
 	prs := parser.NewParser(tokens)
-	expressions := prs.Parse()
+	program := prs.Parse()
 	if prs.ErrorFound() {
 		os.Exit(65)
 	}
 
 	ev := evaluator.NewEvaluator()
-	for _, expr := range expressions {
-		if expr == nil {
-			continue
-		}
-		value, err := ev.Evaluate(expr)
-		if err != nil {
-			// err.Error() is already "[line N] Runtime error: <message>".
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(70)
-		}
-		fmt.Println(evaluator.FormatValue(value))
+	ev.Emit = printValue
+	// One call walks the whole tree from the Program root.
+	if _, err := ev.Evaluate(program); err != nil {
+		// err.Error() is already "[line N] Runtime error: <message>".
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(70)
 	}
 	os.Exit(0)
+}
+
+// printValue is the single place a computed value reaches stdout.
+func printValue(value any) {
+	fmt.Println(evaluator.FormatValue(value))
 }
 
 // runPrompt is the REPL. Lab 3 contract: each line is scanned, parsed and
@@ -148,6 +172,7 @@ func runEvalFile(path string) {
 func runPrompt() {
 	reader := bufio.NewScanner(os.Stdin)
 	ev := evaluator.NewEvaluator()
+	ev.Emit = printValue
 	fmt.Print("> ")
 
 	for reader.Scan() {
@@ -159,19 +184,12 @@ func runPrompt() {
 		// prompt; it never ends the session.
 		if !scn.ErrorFound() {
 			prs := parser.NewParser(tokens)
-			expressions := prs.Parse()
+			program := prs.Parse()
 
 			if !prs.ErrorFound() {
-				for _, expr := range expressions {
-					if expr == nil {
-						continue
-					}
-					value, err := ev.Evaluate(expr)
-					if err != nil {
-						fmt.Fprintln(os.Stderr, err)
-						break // abandon the rest of this line but keep the session
-					}
-					fmt.Println(evaluator.FormatValue(value))
+				if _, err := ev.Evaluate(program); err != nil {
+					// Print the diagnostic and return the prompt; the session lives on.
+					fmt.Fprintln(os.Stderr, err)
 				}
 			}
 		}

@@ -1,0 +1,13 @@
+// Equal boundaries distinguish strict from inclusive comparisons.
+2 < 3; // expect: true
+2 < 2; // expect: false
+3 < 2; // expect: false
+2 <= 2; // expect: true
+3 <= 2; // expect: false
+3 > 2; // expect: true
+2 > 2; // expect: false
+2 > 3; // expect: false
+2 >= 2; // expect: true
+2 >= 3; // expect: false
+-2 < -1; // expect: true
+1.5 <= 2; // expect: true

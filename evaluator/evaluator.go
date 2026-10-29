@@ -4,7 +4,6 @@ import (
 	"cardist/parser"
 	"cardist/scanner"
 	"fmt"
-	"strconv"
 )
 
 // RuntimeError carries the operator token for line number reporting
@@ -17,25 +16,15 @@ func (e *RuntimeError) Error() string {
 	return fmt.Sprintf("[line %d] Runtime error: %s", e.Token.Line, e.Message)
 }
 
-type Evaluator struct{}
+type Evaluator struct {
+	// Emit is called with the value of each top-level expression as soon as it
+	// is computed. Streaming it (instead of returning a list) means output
+	// produced before a runtime error still reaches stdout.
+	Emit func(value any)
+}
 
 func NewEvaluator() *Evaluator {
 	return &Evaluator{}
-}
-
-func FormatValue(value any) string {
-	switch v := value.(type) {
-	case nil:
-		return "nil"
-	case bool:
-		return strconv.FormatBool(v)
-	case float64:
-		return strconv.FormatFloat(v, 'f', -1, 64)
-	case string:
-		return v
-	default:
-		return fmt.Sprintf("%v", v)
-	}
 }
 
 // Main evaluation entry point
@@ -53,6 +42,20 @@ func (e *Evaluator) Evaluate(expr parser.Expr) (result any, err error) {
 	}()
 
 	return expr.Accept(e), nil
+}
+
+// 0. Program (root): evaluate each child tree in source order.
+func (e *Evaluator) VisitProgram(program *parser.Program) any {
+	for _, expr := range program.Expressions {
+		if expr == nil {
+			continue
+		}
+		value := expr.Accept(e)
+		if e.Emit != nil {
+			e.Emit(value)
+		}
+	}
+	return nil
 }
 
 // 1. Literals
@@ -77,7 +80,7 @@ func (e *Evaluator) VisitUnary(expr *parser.UnaryExpr) any {
 		return !e.isTruthy(right)
 	}
 
-	return nil
+	panic(&RuntimeError{Token: expr.Operator, Message: "Unsupported unary operator."})
 }
 
 // 4. Binary Operators (+, -, *, /, comparisons, equality)
@@ -154,7 +157,8 @@ func (e *Evaluator) VisitBinary(expr *parser.BinaryExpr) any {
 		return !e.isEqual(left, right)
 	}
 
-	return nil
+	// An operator the evaluator doesn't know is an evaluator bug, not a nil result.
+	panic(&RuntimeError{Token: expr.Operator, Message: "Unsupported binary operator."})
 }
 
 // --- Helper Functions ---
