@@ -1,0 +1,6 @@
+print 5.0; // expect: 5
+print 7 / 2; // expect: 3.5
+print "hello"; // expect: hello
+print true; // expect: true
+print false; // expect: false
+print nil; // expect: nil
