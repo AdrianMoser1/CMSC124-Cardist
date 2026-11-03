@@ -28,7 +28,7 @@ A fresh clone needs the Go version in `go.mod` (or newer) on PATH; no other depe
 
 | Exit code | Meaning |
 |---|---|
-| 0 | clean run (token stream or AST printed, or file echoed) |
+| 0 | clean run (token stream or AST printed, or program ran to completion) |
 | 64 | invalid command-line usage |
 | 65 | scanner or parser rejected the input (unterminated string, illegal character, or syntax error) |
 | 66 | file could not be read/opened |
@@ -151,7 +151,7 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 
 - Whitespace significant: no, beyond separating tokens
 - Expression separation: the parser consumes a complete expression, optionally consumes one `;`, then starts the next expression. Newlines are whitespace, not separators. Use `;` between expressions to make boundaries explicit; `1 -2` is one subtraction expression, while `1; -2;` is two expressions.
-- Statement terminator: none at the scanner/token level (newline-agnostic; block scoping does the work). `--parse` (Lab 2) does require `;` after every top-level expression — it's how a `.crd` file with multiple expressions gets split into separate parse trees, one printed line per expression.
+- Statement terminator: none at the scanner/token level (newline-agnostic; block scoping does the work). `--parse` (Lab 2) does require `;` after every top-level expression — it's how a `.crd` file with multiple expressions gets split into separate parse trees, one printed line per expression. Also, statement mode requires ';'.
 - Block delimiters: braces `{ }`
 - Grouping delimiters: parentheses `( )`
 
@@ -197,25 +197,24 @@ Runtime errors print on stderr in the form `[line 3] Runtime error: Operands mus
 Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals are quoted; non-terminals aren't. Rules are ordered from lowest precedence (`program`) to highest (`primary`); each rule delegates to the one below it, which is what makes precedence a consequence of call order rather than a checked table. 
 
 ```
-program    → ( expression ";" )* EOF
+script      → statement* EOF
+statement   → printStmt | exprStmt
+printStmt   → "print" expression ";"
+exprStmt    → expression ";"
 
-expression → or
-or         → and ( "or" and )*
-and        → equality ( "and" equality )*
-equality   → comparison ( ( "!=" | "==" ) comparison )*
-comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
-term       → factor ( ( "-" | "+" ) factor )*
-factor     → unary ( ( "/" | "*" ) unary )*
-unary      → ( "!" | "-" ) unary
-           | primary
-primary    → NUMBER | STRING | IDENTIFIER
-           | "true" | "false" | "nil"
-           | "(" expression ")"
-           script    → statement* EOF
-statement  → printStmt | exprStmt
-printStmt  → "print" expression ";"
-exprStmt   → expression ";"
+program     → ( expression ";" )* EOF     // --parse / --eval only
 
+expression  → or
+or          → and ( "or" and )*
+and         → equality ( "and" equality )*
+equality    → comparison ( ( "!=" | "==" ) comparison )*
+comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )*
+term        → factor ( ( "-" | "+" ) factor )*
+factor      → unary ( ( "/" | "*" ) unary )*
+unary       → ( "!" | "-" ) unary | primary
+primary     → NUMBER | STRING | IDENTIFIER
+            | "true" | "false" | "nil"
+            | "(" expression ")"
 ```
 Plain file execution uses script, whose statements require semicolons.
 print evaluates an expression and prints its value. An expression
@@ -340,7 +339,7 @@ python3 run_tests.py tests/lab2
 python3 run_tests.py tests/lab3
 ```
 
-Lab 3 uses inline `// expect: value`, `// expect error: message` (exit 65), and `// expect runtime error: message` (exit 70). Error annotations contain message text without line prefixes. Keep one error annotation per file. To verify an assertion is active, temporarily change an expected value, confirm the harness fails, restore it, and rerun. CI runs all four folders.
+Lab 3 uses inline `// expect: value`, `// expect error: message` (exit 65), and `// expect runtime error: message` (exit 70). Error annotations contain message text without line prefixes. Keep one error annotation per file. To verify an assertion is active, temporarily change an expected value, confirm the harness fails, restore it, and rerun. CI runs all five folders.
 ```
 
 ### Inline annotations (Lab 3)
