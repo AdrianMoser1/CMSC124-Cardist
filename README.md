@@ -107,7 +107,7 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 | `!` | logical negation | unary | right | 8 |
 | `-` | arithmetic negation | unary | right | 8 |
 
-`=` is scanned and reserved for its precedence slot but not yet parsed in Lab 2 — there are no variable statements yet, so nothing exists for it to assign to. `expression` currently starts at `or`. It becomes real once assignment/variable statements land.
+`=` is now parsed. It is right-associative, and the target is validated after the left side is parsed.
 
 ### Punctuation
 
@@ -197,14 +197,17 @@ Runtime errors print on stderr in the form `[line 3] Runtime error: Operands mus
 Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals are quoted; non-terminals aren't. Rules are ordered from lowest precedence (`program`) to highest (`primary`); each rule delegates to the one below it, which is what makes precedence a consequence of call order rather than a checked table. 
 
 ```
-script      → statement* EOF
+script      → declaration* EOF
+declaration → varDecl | statement
+varDecl     → "var" IDENTIFIER ( "=" expression )? ";"
 statement   → printStmt | exprStmt
 printStmt   → "print" expression ";"
 exprStmt    → expression ";"
 
-program     → ( expression ";" )* EOF     // --parse / --eval only
+program     → ( expression ";"? )* EOF      // --parse and --eval only
 
-expression  → or
+expression  → assignment
+assignment  → IDENTIFIER "=" assignment | or
 or          → and ( "or" and )*
 and         → equality ( "and" equality )*
 equality    → comparison ( ( "!=" | "==" ) comparison )*
@@ -226,7 +229,6 @@ and --eval, preserving the earlier labs' behavior.
 - `or` and `and` are Cardist's own precedence levels, sitting above `equality`, matching the keyword operators in the Operators table. Lox's grammar doesn't have them at the expression level.
 - `and`/`or` are word tokens (`TOKEN_AND`, `TOKEN_OR`), not symbols — the grammar quotes them as literals the same way it quotes `"+"`, since they're still terminals from the parser's point of view.
 - `primary` accepts a bare `IDENTIFIER` as an expression. There's no `Variable`/assignment machinery yet (see the Operators table's note on `=`), so today an identifier prints and behaves exactly like a string literal holding its own name. This is a placeholder, not a resolved design — flag it before defense if asked how a bare name evaluates.
-- `=` (assignment) is deliberately absent from this grammar. It's reserved in the token list and shown in the Operators table for its intended precedence, but `expression` has no rule that reaches it yet.
 - Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
