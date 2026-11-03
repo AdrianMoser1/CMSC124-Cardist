@@ -20,6 +20,19 @@ func (e *Evaluator) ExecuteScript(script *parser.Script) error {
 		case *parser.ExpressionStmt:
 			expression = stmt.Expression
 
+		case *parser.VarStmt:
+			// `var x;` has no initializer, so x starts as nil.
+			var value any
+			if stmt.Initializer != nil {
+				initial, err := e.Evaluate(stmt.Initializer)
+				if err != nil {
+					return err
+				}
+				value = initial
+			}
+			e.env.Define(stmt.Name.Lexeme, value)
+			continue
+
 		default:
 			return fmt.Errorf(
 				"Runtime error: unsupported statement type %T",
