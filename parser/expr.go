@@ -25,6 +25,8 @@ type Visitor interface {
 	VisitUnary(expr *UnaryExpr) any
 	VisitBinary(expr *BinaryExpr) any
 	VisitGrouping(expr *GroupingExpr) any
+	VisitVariable(expr *VariableExpr) any
+	VisitAssign(expr *AssignExpr) any
 }
 
 type LiteralExpr struct {
@@ -60,4 +62,23 @@ type GroupingExpr struct {
 
 func (e *GroupingExpr) Accept(v Visitor) any {
 	return v.VisitGrouping(e)
+}
+
+type VariableExpr struct {
+	Name scanner.Token
+}
+
+func (e *VariableExpr) Accept(v Visitor) any {
+	return v.VisitVariable(e)
+}
+
+// AssignExpr writes to an existing binding. Assignment is an expression,
+// so `var b = (a = 1);` works.
+type AssignExpr struct {
+	Name  scanner.Token
+	Value Expr
+}
+
+func (e *AssignExpr) Accept(v Visitor) any {
+	return v.VisitAssign(e)
 }

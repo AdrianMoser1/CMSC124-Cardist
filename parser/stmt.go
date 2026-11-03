@@ -1,5 +1,17 @@
 package parser
 
+import (
+	"cardist/scanner"
+)
+
+// VarStmt declares a name. Initializer is nil for `var x;`.
+type VarStmt struct {
+	Name        scanner.Token
+	Initializer Expr
+}
+
+func (*VarStmt) stmtNode() {}
+
 type Stmt interface {
 	stmtNode()
 }

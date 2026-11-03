@@ -8,7 +8,7 @@ func (p *Parser) ParseScript() *Script {
 	script := &Script{}
 
 	for !p.isAtEnd() {
-		stmt := p.statement()
+		stmt := p.declaration()
 
 		// Week 1: reject the script at the first syntax error.
 		// The caller checks ErrorFound() before executing anything.
@@ -22,6 +22,32 @@ func (p *Parser) ParseScript() *Script {
 	}
 
 	return script
+}
+func (p *Parser) declaration() Stmt {
+	if p.match(scanner.TOKEN_VAR) {
+		return p.varDeclaration()
+	}
+	return p.statement()
+}
+
+func (p *Parser) varDeclaration() Stmt {
+	name, err := p.consume(scanner.TOKEN_IDENTIFIER, "Expect variable name.")
+	if err != nil {
+		return nil
+	}
+
+	var initializer Expr // stays nil for `var x;`
+	if p.match(scanner.TOKEN_EQUAL) {
+		initializer = p.expression()
+		if p.hadError {
+			return nil
+		}
+	}
+
+	if _, err := p.consume(scanner.TOKEN_SEMI_COLON, "Expect ';' after variable declaration."); err != nil {
+		return nil
+	}
+	return &VarStmt{Name: name, Initializer: initializer}
 }
 
 func (p *Parser) statement() Stmt {

@@ -45,10 +45,6 @@ func (p *Parser) Parse() *Program {
 	return program
 }
 
-func (p *Parser) expression() Expr {
-	return p.or()
-}
-
 func (p *Parser) or() Expr {
 	expr := p.and()
 
@@ -148,7 +144,7 @@ func (p *Parser) primary() Expr {
 
 	// Added: Match identifiers (variable names) and store their lexeme string
 	if p.match(scanner.TOKEN_IDENTIFIER) {
-		return &LiteralExpr{Value: p.previous().Lexeme}
+		return &VariableExpr{Name: p.previous()}
 	}
 
 	if p.match(scanner.TOKEN_LEFT_PAREN) {
@@ -237,4 +233,32 @@ func (p *Parser) synchronize() {
 
 		p.advance()
 	}
+}
+
+func (p *Parser) expression() Expr {
+	return p.assignment()
+}
+
+// assignment parses the left side as an ordinary expression FIRST, then
+// checks whether it was a legal target. The parser can't know `a + b` is
+// wrong until it sees the `=` after it, so it validates afterwards.
+func (p *Parser) assignment() Expr {
+	expr := p.or()
+	if p.hadError || !p.match(scanner.TOKEN_EQUAL) {
+		return expr
+	}
+
+	equals := p.previous()
+	value := p.assignment() // recursing on the right makes `a = b = 1` right-associative
+	if p.hadError {
+		return nil
+	}
+
+	if target, ok := expr.(*VariableExpr); ok {
+		return &AssignExpr{Name: target.Name, Value: value}
+	}
+
+	p.reportError(equals, "Invalid assignment target.")
+	return nil
+
 }
