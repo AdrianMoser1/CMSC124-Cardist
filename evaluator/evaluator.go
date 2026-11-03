@@ -160,6 +160,15 @@ func (e *Evaluator) VisitBinary(expr *parser.BinaryExpr) any {
 	// An operator the evaluator doesn't know is an evaluator bug, not a nil result.
 	panic(&RuntimeError{Token: expr.Operator, Message: "Unsupported binary operator."})
 }
+func (e *Evaluator) VisitVariable(expr *parser.VariableExpr) any {
+	// Placeholder until Week 3 adds environments: a bare name still
+	// evaluates to its own text, which keeps tests/lab3 passing.
+	return expr.Name.Lexeme
+}
+
+func (e *Evaluator) VisitAssign(expr *parser.AssignExpr) any {
+	panic(&RuntimeError{Token: expr.Name, Message: "Assignment is not implemented yet."})
+}
 
 // --- Helper Functions ---
 

@@ -70,6 +70,14 @@ func (p *AstPrinter) VisitGrouping(expr *GroupingExpr) any {
 	return p.parenthesize("group", expr.Expression)
 }
 
+func (p *AstPrinter) VisitVariable(expr *VariableExpr) any {
+	return expr.Name.Lexeme // same output as before the node existed
+}
+
+func (p *AstPrinter) VisitAssign(expr *AssignExpr) any {
+	return p.parenthesize("= "+expr.Name.Lexeme, expr.Value) // (= x 1.0)
+}
+
 func (p *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 	var builder strings.Builder
 
