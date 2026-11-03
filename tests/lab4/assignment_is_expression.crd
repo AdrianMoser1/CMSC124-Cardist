@@ -1,0 +1,4 @@
+var x = 1;
+var r = (x = 15);
+print r; // expect: 15
+print x; // expect: 15

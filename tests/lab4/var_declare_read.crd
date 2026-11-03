@@ -1,0 +1,6 @@
+var x = 10;
+print x; // expect: 10
+var y;
+print y; // expect: nil
+var total = x + 5;
+print total; // expect: 15

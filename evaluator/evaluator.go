@@ -21,10 +21,13 @@ type Evaluator struct {
 	// is computed. Streaming it (instead of returning a list) means output
 	// produced before a runtime error still reaches stdout.
 	Emit func(value any)
+
+	// env is the scope currently in use. It starts as the global scope.
+	env *Environment
 }
 
 func NewEvaluator() *Evaluator {
-	return &Evaluator{}
+	return &Evaluator{env: NewEnvironment(nil)}
 }
 
 // Main evaluation entry point
@@ -161,13 +164,14 @@ func (e *Evaluator) VisitBinary(expr *parser.BinaryExpr) any {
 	panic(&RuntimeError{Token: expr.Operator, Message: "Unsupported binary operator."})
 }
 func (e *Evaluator) VisitVariable(expr *parser.VariableExpr) any {
-	// Placeholder until Week 3 adds environments: a bare name still
-	// evaluates to its own text, which keeps tests/lab3 passing.
-	return expr.Name.Lexeme
+	return e.env.Get(expr.Name)
 }
 
+// Assignment is an expression, so it returns the value it stored.
 func (e *Evaluator) VisitAssign(expr *parser.AssignExpr) any {
-	panic(&RuntimeError{Token: expr.Name, Message: "Assignment is not implemented yet."})
+	value := expr.Value.Accept(e)
+	e.env.Assign(expr.Name, value)
+	return value
 }
 
 // --- Helper Functions ---
