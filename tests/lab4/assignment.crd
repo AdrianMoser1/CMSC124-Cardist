@@ -1,0 +1,7 @@
+var x = 1;
+x = 2;
+print x; // expect: 2
+x = x + 3;
+print x; // expect: 5
+x = "changed";
+print x; // expect: changed
