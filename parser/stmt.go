@@ -32,3 +32,11 @@ type ExpressionStmt struct {
 }
 
 func (*ExpressionStmt) stmtNode() {}
+
+// BlockStmt is `{ declaration* }`. Its children may themselves be blocks,
+// which is what makes scopes nest to any depth.
+type BlockStmt struct {
+	Statements []Stmt
+}
+
+func (*BlockStmt) stmtNode() {}
