@@ -10,6 +10,15 @@ type Parser struct {
 	tokens   []scanner.Token
 	current  int
 	hadError bool
+
+	// panicMode is set when a syntax error is reported and cleared once
+	// synchronize() has found a point to resume parsing. Unlike hadError (which
+	// stays true for the whole file so main can exit 65), it says "the
+	// statement being parsed right now has already failed".
+	panicMode bool
+	// blockDepth is how many '{' are open. synchronize() uses it to leave a
+	// '}' for the enclosing block instead of swallowing it.
+	blockDepth int
 }
 
 func NewParser(tokens []scanner.Token) *Parser {
@@ -208,6 +217,7 @@ func (p *Parser) consume(tokenType scanner.TokenType, message string) (scanner.T
 
 func (p *Parser) reportError(token scanner.Token, message string) {
 	p.hadError = true
+	p.panicMode = true
 	if token.Type == scanner.TOKEN_EOF {
 		fmt.Fprintf(os.Stderr, "[line %d] Error at end: %s\n", token.Line, message)
 	} else {
@@ -215,8 +225,24 @@ func (p *Parser) reportError(token scanner.Token, message string) {
 	}
 }
 
+// synchronize discards tokens after a syntax error until a new statement can
+// plausibly begin: just after a ';', or just before a statement keyword or '{'.
+//
+// It always consumes at least one token, so a caller that loops "parse a
+// statement, synchronize on error" makes progress and can never spin. The one
+// exception is a '}' that closes an open block: that is left for block(),
+// otherwise recovery inside a block would eat its own closing brace and report
+// a bogus "Expect '}'" afterwards.
 func (p *Parser) synchronize() {
-	p.advance()
+	p.panicMode = false
+
+	if p.isAtEnd() {
+		return
+	}
+	if p.blockDepth > 0 && p.check(scanner.TOKEN_RIGHT_BRACE) {
+		return
+	}
+	p.advance() // guaranteed progress
 
 	for !p.isAtEnd() {
 		if p.previous().Type == scanner.TOKEN_SEMI_COLON {
@@ -227,8 +253,13 @@ func (p *Parser) synchronize() {
 		case scanner.TOKEN_VAR, scanner.TOKEN_IF, scanner.TOKEN_ELSEIF, scanner.TOKEN_ELSE,
 			scanner.TOKEN_SWITCH, scanner.TOKEN_WHILE, scanner.TOKEN_PRINT, scanner.TOKEN_RETURN,
 			scanner.TOKEN_FOR, scanner.TOKEN_FUNC, scanner.TOKEN_CARD, scanner.TOKEN_ENEMY,
-			scanner.TOKEN_ARTIFACT, scanner.TOKEN_ELIXIR, scanner.TOKEN_TURN:
+			scanner.TOKEN_ARTIFACT, scanner.TOKEN_ELIXIR, scanner.TOKEN_TURN,
+			scanner.TOKEN_LEFT_BRACE:
 			return
+		case scanner.TOKEN_RIGHT_BRACE:
+			if p.blockDepth > 0 {
+				return
+			}
 		}
 
 		p.advance()
@@ -242,15 +273,20 @@ func (p *Parser) expression() Expr {
 // assignment parses the left side as an ordinary expression FIRST, then
 // checks whether it was a legal target. The parser can't know `a + b` is
 // wrong until it sees the `=` after it, so it validates afterwards.
+//
+// "Has this statement already failed?" is panicMode, not hadError: hadError
+// stays true for the rest of the file once ANY earlier statement failed, which
+// would make every later assignment look like a failure and cascade into
+// bogus errors.
 func (p *Parser) assignment() Expr {
 	expr := p.or()
-	if p.hadError || !p.match(scanner.TOKEN_EQUAL) {
+	if p.panicMode || !p.match(scanner.TOKEN_EQUAL) {
 		return expr
 	}
 
 	equals := p.previous()
 	value := p.assignment() // recursing on the right makes `a = b = 1` right-associative
-	if p.hadError {
+	if p.panicMode {
 		return nil
 	}
 
