@@ -1,0 +1,11 @@
+// Needs block EXECUTION (the evaluator side). Move to tests/lab4/ once it lands.
+{
+  {
+    {
+      print "deep"; // expect: deep
+    }
+    print "middle"; // expect: middle
+  }
+  print "outer"; // expect: outer
+}
+print "top"; // expect: top

@@ -1,0 +1,5 @@
+// Five deep, one closing brace missing at the end.
+{ // expect error: Expect '}' after block.
+  { { { {
+    print 1;
+  } } } }
