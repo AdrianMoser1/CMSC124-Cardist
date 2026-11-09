@@ -1,0 +1,21 @@
+var i = 0;
+while (i < 3) {
+    print i; // expect: 0
+             // expect: 1
+             // expect: 2
+    i = i + 1;
+}
+print i; // expect: 3
+
+// A false condition skips the body entirely.
+while (false) print "never";
+
+// The body's var lives in the block: a fresh x each iteration, gone after.
+var n = 0;
+while (n < 2) {
+    var x = n * 10;
+    print x; // expect: 0
+             // expect: 10
+    n = n + 1;
+}
+print x; // expect runtime error: Undefined variable 'x'.
