@@ -236,6 +236,18 @@ and --eval, preserving the earlier labs' behavior.
 `program`'s `;`-per-expression rule is what `./run --parse` uses to split a `.crd` file into separate trees, one printed line per expression (see Whitespace and termination).
 
 ## Semantics
+### Scope, binding and lifetime
+- Scope is lexical: each block gets a new environment linked to the one it is
+  written in. Lookup and assignment walk outward to the innermost match; `var`
+  always binds in the current scope, so it shadows instead of overwriting.
+- Assignment never creates a binding. Redeclaring in the same scope overwrites.
+- Names, values and types are bound at run time; values and types can change.
+- Globals last for the whole run or REPL session. Block bindings start when
+  their `var` runs and stop being visible when the block exits (restored with
+  `defer`, including on errors). Go's garbage collector frees the storage.
+- `var x;` is `nil`. Undefined names are runtime errors (exit 70), which keeps
+  Lab 5 recursion working without a resolver pass.
+- The REPL shares one evaluator; a top-level `expr;` or a bare `expr` prints.
 ### Evaluation model
 The parser builds one tree per file. `Program` is the root node; its children are the file's expressions in source order, and every other node (`LiteralExpr`, `UnaryExpr`, `BinaryExpr`, `GroupingExpr`) holds its operands as child nodes. Two visitors walk that same tree: `AstPrinter` (`--parse`) and `Evaluator` (`--eval` and the REPL). The evaluator is a post-order traversal: each node evaluates its children first, then does its own work, so `*` in `2 + 3 * 4` is computed before `+`. `and` / `or` are the exception, because they skip the right child when the left already decides the result.
 
