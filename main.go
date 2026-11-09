@@ -162,13 +162,9 @@ func printValue(value any) {
 	fmt.Println(evaluator.FormatValue(value))
 }
 
-// runPrompt is the REPL. Lab 3 contract: each line is scanned, parsed and
-// EVALUATED, and the computed value is printed. (Lab 1 printed tokens and
-// Lab 2 printed the AST; those are still reachable via --tokenize / --parse.)
-//
-// File mode and the REPL share the same Evaluate call and FormatValue; they
-// differ only in what happens after an error: the file exits 70, the REPL
-// prints the diagnostic and returns the prompt.
+// runPrompt is the REPL. One evaluator for the whole session, so variables persist.
+// shortcut: one line = one entry, so a block must fit on one line; buffer lines
+// until braces balance if multi-line blocks are ever needed.
 func runPrompt() {
 	reader := bufio.NewScanner(os.Stdin)
 	ev := evaluator.NewEvaluator()
@@ -176,21 +172,23 @@ func runPrompt() {
 	fmt.Print("> ")
 
 	for reader.Scan() {
-		line := reader.Text()
-		scn := scanner.NewScanner(line)
+		scn := scanner.NewScanner(reader.Text())
 		tokens := scn.ScanTokens()
 
-		// A bad line prints its diagnostic (on stderr) and returns the
-		// prompt; it never ends the session.
 		if !scn.ErrorFound() {
 			prs := parser.NewParser(tokens)
-			program := prs.Parse()
-
-			if !prs.ErrorFound() {
-				if _, err := ev.Evaluate(program); err != nil {
-					// Print the diagnostic and return the prompt; the session lives on.
-					fmt.Fprintln(os.Stderr, err)
+			var err error
+			// tokens always ends with EOF, so tokens[n-2] is the last real token.
+			if n := len(tokens); n > 1 && (tokens[n-2].Type == scanner.TOKEN_SEMI_COLON || tokens[n-2].Type == scanner.TOKEN_RIGHT_BRACE) {
+				if script := prs.ParseScript(); !prs.ErrorFound() {
+					err = ev.ExecuteREPL(script)
 				}
+			} else if program := prs.Parse(); !prs.ErrorFound() {
+				// No trailing ; or }: Lab 3 expression path, so `2 + 3` still prints 5.
+				_, err = ev.Evaluate(program)
+			}
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
 			}
 		}
 		fmt.Print("> ")

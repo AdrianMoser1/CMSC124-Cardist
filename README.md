@@ -200,7 +200,9 @@ Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals
 script      → declaration* EOF
 declaration → varDecl | statement
 varDecl     → "var" IDENTIFIER ( "=" expression )? ";"
-statement   → printStmt | exprStmt
+statement   → whileStmt | printStmt | block | exprStmt
+whileStmt   → "while" "(" expression ")" statement
+block       → "{" declaration* "}"
 printStmt   → "print" expression ";"
 exprStmt    → expression ";"
 
@@ -230,12 +232,28 @@ and --eval, preserving the earlier labs' behavior.
 - `and`/`or` are word tokens (`TOKEN_AND`, `TOKEN_OR`), not symbols — the grammar quotes them as literals the same way it quotes `"+"`, since they're still terminals from the parser's point of view.
 - `primary` accepts a bare `IDENTIFIER` as an expression. There's no `Variable`/assignment machinery yet (see the Operators table's note on `=`), so today an identifier prints and behaves exactly like a string literal holding its own name. This is a placeholder, not a resolved design — flag it before defense if asked how a bare name evaluates.
 - Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
+- Repetition is imperative: `while` re-checks its condition before every pass
+  and runs the body only while it is truthy (only `false` and `nil` are falsey).
+- A `{ }` body gets a fresh scope each pass, so a `var` inside it is gone after the loop.
+- `for` comes in Week 2, desugared to `while`.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
 
 `program`'s `;`-per-expression rule is what `./run --parse` uses to split a `.crd` file into separate trees, one printed line per expression (see Whitespace and termination).
 
 ## Semantics
+### Scope, binding and lifetime
+- Scope is lexical: each block gets a new environment linked to the one it is
+  written in. Lookup and assignment walk outward to the innermost match; `var`
+  always binds in the current scope, so it shadows instead of overwriting.
+- Assignment never creates a binding. Redeclaring in the same scope overwrites.
+- Names, values and types are bound at run time; values and types can change.
+- Globals last for the whole run or REPL session. Block bindings start when
+  their `var` runs and stop being visible when the block exits (restored with
+  `defer`, including on errors). Go's garbage collector frees the storage.
+- `var x;` is `nil`. Undefined names are runtime errors (exit 70), which keeps
+  Lab 5 recursion working without a resolver pass.
+- The REPL shares one evaluator; a top-level `expr;` or a bare `expr` prints.
 ### Evaluation model
 The parser builds one tree per file. `Program` is the root node; its children are the file's expressions in source order, and every other node (`LiteralExpr`, `UnaryExpr`, `BinaryExpr`, `GroupingExpr`) holds its operands as child nodes. Two visitors walk that same tree: `AstPrinter` (`--parse`) and `Evaluator` (`--eval` and the REPL). The evaluator is a post-order traversal: each node evaluates its children first, then does its own work, so `*` in `2 + 3 * 4` is computed before `+`. `and` / `or` are the exception, because they skip the right child when the left already decides the result.
 

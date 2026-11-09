@@ -1,0 +1,1 @@
+while true print "x"; // expect error: Expect '(' after 'while'.

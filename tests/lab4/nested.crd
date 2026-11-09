@@ -1,0 +1,11 @@
+var a = 1;
+{
+    var b = 2;
+    {
+        a = a + b;
+        print a; // expect: 3
+    }
+    print b; // expect: 2
+}
+// Would print 1 if assignment had made a new local a.
+print a; // expect: 3
