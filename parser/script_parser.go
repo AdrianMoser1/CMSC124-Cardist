@@ -73,6 +73,9 @@ func (p *Parser) varDeclaration() Stmt {
 }
 
 func (p *Parser) statement() Stmt {
+	if p.match(scanner.TOKEN_IF) {
+		return p.ifStatement()
+	}
 	if p.match(scanner.TOKEN_WHILE) {
 		return p.whileStatement()
 	}
