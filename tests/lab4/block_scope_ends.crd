@@ -1,0 +1,4 @@
+{
+    var b = 2;
+}
+print b; // expect runtime error: Undefined variable 'b'.
