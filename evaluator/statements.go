@@ -52,6 +52,20 @@ func (e *Evaluator) execute(statement parser.Stmt) error {
 		e.env.Define(stmt.Name.Lexeme, value)
 		return nil
 
+	case *parser.WhileStmt:
+		for {
+			condition, err := e.Evaluate(stmt.Condition)
+			if err != nil {
+				return err
+			}
+			if !e.isTruthy(condition) {
+				return nil
+			}
+			if err := e.execute(stmt.Body); err != nil {
+				return err
+			}
+		}
+
 	case *parser.BlockStmt:
 		// Enclosing = where the block is written, which makes scope lexical.
 		return e.executeBlock(stmt.Statements, NewEnvironment(e.env))
