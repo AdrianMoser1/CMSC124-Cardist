@@ -1,0 +1,2 @@
+{ // expect error: Expect '}' after block.
+  print 1;

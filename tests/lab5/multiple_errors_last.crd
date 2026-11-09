@@ -1,0 +1,6 @@
+// Three separate errors. The annotation is the LAST one, so this only passes
+// if the parser recovered from the first two and kept going.
+var = 1;
+print 2
+print 3;
+{ print 4; // expect error: Expect '}' after block.

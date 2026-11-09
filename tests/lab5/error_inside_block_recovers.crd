@@ -1,0 +1,7 @@
+// A bad statement inside a block must not swallow the block's closing brace.
+// If it did, the only error would be a bogus "Expect '}'" at the end.
+{
+  print ; // expect error: Expect expression.
+  print 2;
+}
+print 3;
