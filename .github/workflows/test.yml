@@ -43,3 +43,6 @@ jobs:
 
     - name: Run Lab 4 Tests
       run: python3 run_tests.py tests/lab4
+
+    - name: Run REPL Test
+      run: ./tests/repl_block_error.sh
