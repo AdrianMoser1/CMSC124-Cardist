@@ -200,7 +200,9 @@ Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals
 script      → declaration* EOF
 declaration → varDecl | statement
 varDecl     → "var" IDENTIFIER ( "=" expression )? ";"
-statement   → printStmt | exprStmt
+statement   → whileStmt | printStmt | block | exprStmt
+whileStmt   → "while" "(" expression ")" statement
+block       → "{" declaration* "}"
 printStmt   → "print" expression ";"
 exprStmt    → expression ";"
 
@@ -230,6 +232,10 @@ and --eval, preserving the earlier labs' behavior.
 - `and`/`or` are word tokens (`TOKEN_AND`, `TOKEN_OR`), not symbols — the grammar quotes them as literals the same way it quotes `"+"`, since they're still terminals from the parser's point of view.
 - `primary` accepts a bare `IDENTIFIER` as an expression. There's no `Variable`/assignment machinery yet (see the Operators table's note on `=`), so today an identifier prints and behaves exactly like a string literal holding its own name. This is a placeholder, not a resolved design — flag it before defense if asked how a bare name evaluates.
 - Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
+- Repetition is imperative: `while` re-checks its condition before every pass
+  and runs the body only while it is truthy (only `false` and `nil` are falsey).
+- A `{ }` body gets a fresh scope each pass, so a `var` inside it is gone after the loop.
+- `for` comes in Week 2, desugared to `while`.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
 
