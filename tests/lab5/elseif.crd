@@ -1,0 +1,2 @@
+if (false) print "a"; else if (true) print "b"; else print "c"; // expect: b
+if (1 == 0) print "bad"; else if (2 < 3) print "x"; else print "y"; // expect: x

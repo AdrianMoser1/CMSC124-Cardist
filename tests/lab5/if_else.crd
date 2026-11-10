@@ -1,0 +1,4 @@
+if (true) print "then"; else print "else"; // expect: then
+if (0) print "zero is true"; else print "zero is false"; // expect: zero is true
+if (false) print "never"; // expect nothing
+if (nil) print "nil is true"; else print "nil is false"; // expect: nil is false
