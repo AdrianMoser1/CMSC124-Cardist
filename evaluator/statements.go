@@ -66,6 +66,19 @@ func (e *Evaluator) execute(statement parser.Stmt) error {
 			}
 		}
 
+	case *parser.IfStmt:
+		condition, err := e.Evaluate(stmt.Condition)
+		if err != nil {
+			return err
+		}
+		if e.isTruthy(condition) {
+			return e.execute(stmt.ThenBranch)
+		}
+		if stmt.ElseBranch != nil {
+			return e.execute(stmt.ElseBranch)
+		}
+		return nil
+
 	case *parser.BlockStmt:
 		// Enclosing = where the block is written, which makes scope lexical.
 		return e.executeBlock(stmt.Statements, NewEnvironment(e.env))
