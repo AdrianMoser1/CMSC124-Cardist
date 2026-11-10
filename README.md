@@ -200,7 +200,8 @@ Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals
 script      → declaration* EOF
 declaration → varDecl | statement
 varDecl     → "var" IDENTIFIER ( "=" expression )? ";"
-statement   → whileStmt | printStmt | block | exprStmt
+statement   → ifStmt | whileStmt | printStmt | block | exprStmt
+ifStmt      → "if" "(" expression ")" statement ( "else" statement )?
 whileStmt   → "while" "(" expression ")" statement
 block       → "{" declaration* "}"
 printStmt   → "print" expression ";"
@@ -231,10 +232,12 @@ and --eval, preserving the earlier labs' behavior.
 - `or` and `and` are Cardist's own precedence levels, sitting above `equality`, matching the keyword operators in the Operators table. Lox's grammar doesn't have them at the expression level.
 - `and`/`or` are word tokens (`TOKEN_AND`, `TOKEN_OR`), not symbols — the grammar quotes them as literals the same way it quotes `"+"`, since they're still terminals from the parser's point of view.
 - `primary` accepts a bare `IDENTIFIER` as an expression. There's no `Variable`/assignment machinery yet (see the Operators table's note on `=`), so today an identifier prints and behaves exactly like a string literal holding its own name. This is a placeholder, not a resolved design — flag it before defense if asked how a bare name evaluates.
+- Conditional branches evaluate truthiness with the same rule as Lab 3: only `false` and `nil` are falsey. A `0`, an empty string, and a nonempty string all count as truthy.
+- `if` has an optional `else`; `elseif` is parsed as `else` followed by another `if`, so the `else` always binds to the nearest matching `if` (the dangling-else rule).
+- A `{ }` body gets a fresh scope each pass, so a `var` inside it is gone after the loop.
 - Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
 - Repetition is imperative: `while` re-checks its condition before every pass
   and runs the body only while it is truthy (only `false` and `nil` are falsey).
-- A `{ }` body gets a fresh scope each pass, so a `var` inside it is gone after the loop.
 - `for` comes in Week 2, desugared to `while`.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
