@@ -198,7 +198,9 @@ Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals
 
 ```
 script      → declaration* EOF
-declaration → varDecl | statement
+declaration → funDecl | varDecl | statement
+funDecl     → "func" IDENTIFIER "(" parameters? ")" block
+parameters  → IDENTIFIER ( "," IDENTIFIER )*
 varDecl     → "var" IDENTIFIER ( "=" expression )? ";"
 statement   → ifStmt | whileStmt | printStmt | block | exprStmt
 ifStmt      → "if" "(" expression ")" statement ( "else" statement )?
@@ -217,7 +219,9 @@ equality    → comparison ( ( "!=" | "==" ) comparison )*
 comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )*
 term        → factor ( ( "-" | "+" ) factor )*
 factor      → unary ( ( "/" | "*" ) unary )*
-unary       → ( "!" | "-" ) unary | primary
+unary       → ( "!" | "-" ) unary | call
+call        → primary ( "(" arguments? ")" )*
+arguments   → expression ( "," expression )*
 primary     → NUMBER | STRING | IDENTIFIER
             | "true" | "false" | "nil"
             | "(" expression ")"
@@ -238,6 +242,17 @@ and --eval, preserving the earlier labs' behavior.
 - Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
 - Repetition is imperative: `while` re-checks its condition before every pass
   and runs the body only while it is truthy (only `false` and `nil` are falsey).
+- `func` declares a named function. It is a declaration like `var`, and its
+  name is an ordinary variable holding the function, so functions can be
+  stored, reassigned and printed (`<fn name>`).
+- A call is postfix on any expression, so `f()()` and `(f)()` parse.
+  Calling a non-function is a runtime error (`Can only call functions.`), and
+  so is a wrong argument count (`Expected N arguments but got M.`).
+- A function keeps the scope it was written in (its closure). Each call
+  runs in a new scope enclosing that closure, not the caller's scope. This
+  is what makes Cardist lexical, and it keeps a block's variables alive after
+  the block ends if a function written inside it still refers to them.
+- Until `return` arrives (Week 3), every call evaluates to `nil`.
 - `for` comes in Week 2, desugared to `while`.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
