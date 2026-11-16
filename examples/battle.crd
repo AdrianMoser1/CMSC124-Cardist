@@ -1,0 +1,45 @@
+// A short card fight: each round the player plays Strike, then Defend, and the
+// enemy hits back until one side drops. Run it with: ./run examples/battle.crd
+//
+// What it shows from Lab 4:
+// - globals that outlive every block (playerHp, enemyHp, round)
+// - a fresh scope every loop pass (shield resets to 0 each round)
+// - shadowing: the round-3 Strike declares its own damage
+// - assignment walking out through scopes to update a global
+
+var playerHp = 20;
+var enemyHp = 30;
+var round = 1;
+
+while (enemyHp > 0 and playerHp > 0) {
+    var shield = 0;                    // new each round: this loop pass's scope
+
+    {   // Strike
+        var damage = 6;
+        if (round == 3) {
+            var damage = 12;          // critical hit: shadows the card's damage
+            enemyHp = enemyHp - damage;
+        } else {
+            enemyHp = enemyHp - damage;   // walks out to the global enemyHp
+        }
+    }
+
+    {   // Defend
+        shield = shield + 5;            // updates this round's shield, one scope up
+    }
+
+    if (enemyHp > 0) {
+        var taken = 8 - shield;        // enemy attacks for 8
+        playerHp = playerHp - taken;
+    }
+
+    print "round";
+    print round;
+    print "enemy hp";
+    print enemyHp;
+    print "player hp";
+    print playerHp;
+    round = round + 1;
+}
+
+if (enemyHp <= 0) print "enemy defeated"; else print "player defeated";
