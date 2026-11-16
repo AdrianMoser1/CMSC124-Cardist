@@ -117,7 +117,7 @@ Every token type the scanner can emit, listed once. Names are the `TOKEN_` const
 | `{` `}` | LEFT_BRACE, RIGHT_BRACE | blocks |
 | `,` | COMMA | separator in lists |
 | `:` | COLON | reserved |
-| `;` | SEMI_COLON | optional expression terminator |
+| `;` | SEMI_COLON | required in scripts; optional in --parse and --eval |
 
 ### Literals
 
@@ -192,6 +192,13 @@ Scanning continues after an error so several problems are reported in one pass. 
 
 Runtime errors print on stderr in the form `[line 3] Runtime error: Operands must be numbers.` Evaluation stops at the first one. Output printed before it stays on stdout.
 
+### Error recovery
+
+After a syntax error the parser calls `synchronize()` to find where the next statement can start, then keeps parsing. One run reports every syntax error.
+
+- `synchronize()` always consumes at least one token first. A bad token can never be read twice, so recovery cannot loop forever or hit the harness 15-second limit.
+- It then drops tokens until it has just passed a `;`, or the next token is a statement-start keyword (`var`, `print`, `if`, `while`, `for`, `return`, `func`, and the other keywords listed in `synchronize()`).
+- Errors print to stderr as found. If there was any, the script exits 65 and nothing runs, so stdout stays empty.
 ## Grammar
 
 Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals are quoted; non-terminals aren't. Rules are ordered from lowest precedence (`program`) to highest (`primary`); each rule delegates to the one below it, which is what makes precedence a consequence of call order rather than a checked table. 
@@ -212,7 +219,7 @@ exprStmt    → expression ";"
 program     → ( expression ";"? )* EOF      // --parse and --eval only
 
 expression  → assignment
-assignment  → IDENTIFIER "=" assignment | or
+assignment  → assignment | or
 or          → and ( "or" and )*
 and         → equality ( "and" equality )*
 equality    → comparison ( ( "!=" | "==" ) comparison )*
@@ -235,8 +242,7 @@ and --eval, preserving the earlier labs' behavior.
 
 - `or` and `and` are Cardist's own precedence levels, sitting above `equality`, matching the keyword operators in the Operators table. Lox's grammar doesn't have them at the expression level.
 - `and`/`or` are word tokens (`TOKEN_AND`, `TOKEN_OR`), not symbols — the grammar quotes them as literals the same way it quotes `"+"`, since they're still terminals from the parser's point of view.
-- `primary` accepts a bare `IDENTIFIER` as an expression. There's no `Variable`/assignment machinery yet (see the Operators table's note on `=`), so today an identifier prints and behaves exactly like a string literal holding its own name. This is a placeholder, not a resolved design — flag it before defense if asked how a bare name evaluates.
-- Conditional branches evaluate truthiness with the same rule as Lab 3: only `false` and `nil` are falsey. A `0`, an empty string, and a nonempty string all count as truthy.
+- `primary` accepts a bare `IDENTIFIER` as a variable reference. In a script it reads the binding; a name never declared is a runtime error (exit 70).- Conditional branches evaluate truthiness with the same rule as Lab 3: only `false` and `nil` are falsey. A `0`, an empty string, and a nonempty string all count as truthy.
 - `if` has an optional `else`; `elseif` is parsed as `else` followed by another `if`, so the `else` always binds to the nearest matching `if` (the dangling-else rule).
 - A `{ }` body gets a fresh scope each pass, so a `var` inside it is gone after the loop.
 - Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
@@ -258,6 +264,10 @@ and --eval, preserving the earlier labs' behavior.
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
 
 `program`'s `;`-per-expression rule is what `./run --parse` uses to split a `.crd` file into separate trees, one printed line per expression (see Whitespace and termination).
+### Declarations and assignment
+
+- `var` is legal only where a `declaration` is allowed: the top level of a script. It is not an expression, so `print var x;` and `1 + var x;` are syntax errors.
+- The assignment target is checked while parsing, not while running. The parser reads the left side as a normal expression first. If `=` follows, it accepts the left side only when it is a bare identifier. `1 = 2`, `a + b = c` and `(a) = 1` give `Invalid assignment target.` on stderr and exit 65, before any statement runs.
 
 ## Semantics
 ### Scope, binding and lifetime
@@ -375,14 +385,16 @@ python3 run_tests.py tests/lab0
 python3 run_tests.py tests/lab1
 python3 run_tests.py tests/lab2
 python3 run_tests.py tests/lab3
+python3 run_tests.py tests/lab4
+python3 run_tests.py tests/lab5
 ```
 
-Lab 3 uses inline `// expect: value`, `// expect error: message` (exit 65), and `// expect runtime error: message` (exit 70). Error annotations contain message text without line prefixes. Keep one error annotation per file. To verify an assertion is active, temporarily change an expected value, confirm the harness fails, restore it, and rerun. CI runs all five folders.
+Lab 3 uses inline `// expect: value`, `// expect error: message` (exit 65), and `// expect runtime error: message` (exit 70). Error annotations contain message text without line prefixes. Keep one error annotation per file. To verify an assertion is active, temporarily change an expected value, confirm the harness fails, restore it, and rerun. CI runs all six folders (lab0 through lab5)
 ```
+### Inline annotations (Labs 3 and 4)
+tests/lab4 runs plain ./run <file>, no flag.
 
-### Inline annotations (Lab 3)
 `tests/lab3` uses inline mode with `comment_prefix: "//"`. Each test file holds the program and its expectations:
-
 ```
 3 + 4; // expect: 7
 "a" - 1; // expect runtime error: Operands must be numbers.
@@ -439,7 +451,9 @@ Token(type=EOF, lexeme=, literal=null, line=7)
 | Activity | What changed in the language |
 |---|---|
 | Lab 1 | Scanner, initial keyword list, token format frozen. |
-| Lab 2 |0 Evaluator added: `--eval`, value printing rules, truthiness, runtime errors (exit 70), division by zero is an error. REPL now prints values. |
+| Lab 2 | Parser and AST: expression grammar with precedence, `--parse` output format, syntax errors (exit 65). |
+| Lab 3 | Evaluator: `--eval`, value printing rules, truthiness, runtime errors (exit 70), division by zero is an error. REPL prints values. |
+| Lab 4 | Statements and state: `print` and expression statements, `var` declarations, variable lookup, assignment with parse-time target check. Plain `./run <file>` executes a script. Syntax errors recover at statement boundaries; all are reported before exit 65. |
 
 ## Bug log
 
