@@ -1,0 +1,23 @@
+// `elseif` is one keyword, not `else` + `if`.
+var n = 2;
+if (n == 1) print "one";
+elseif (n == 2) print "two"; // expect: two
+elseif (n == 3) print "three";
+else print "other";
+
+n = 3;
+if (n == 1) print "one";
+elseif (n == 2) print "two";
+elseif (n == 3) print "three"; // expect: three
+else print "other";
+
+n = 9;
+if (n == 1) print "one";
+elseif (n == 2) print "two";
+else print "other"; // expect: other
+
+// No branch matches and no else: nothing happens.
+n = 9;
+if (n == 1) print "one";
+elseif (n == 2) print "two";
+print "done"; // expect: done

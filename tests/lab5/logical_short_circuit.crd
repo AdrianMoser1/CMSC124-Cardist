@@ -1,0 +1,23 @@
+// Right side is bad. If it ran, the file would die with a runtime error.
+print false and ("bad" + 1); // expect: false
+print true or ("bad" + 1);   // expect: true
+print nil and ("bad" + 1);   // expect: nil
+
+// Results are the deciding operand, not a bool.
+print nil or "x";   // expect: x
+print false or 3;   // expect: 3
+print 1 and 2;      // expect: 2
+print 0 or "no";    // expect: 0
+
+// `and` binds tighter than `or`.
+print true or false and false;  // expect: true
+print false and false or true;  // expect: true
+print false or false and true;  // expect: false
+
+// Same idea with a side effect in an assignment.
+var hit = 0;
+false and (hit = 1);
+true or (hit = 1);
+print hit; // expect: 0
+true and (hit = 1);
+print hit; // expect: 1
