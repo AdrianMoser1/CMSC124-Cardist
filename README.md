@@ -192,6 +192,13 @@ Scanning continues after an error so several problems are reported in one pass. 
 
 Runtime errors print on stderr in the form `[line 3] Runtime error: Operands must be numbers.` Evaluation stops at the first one. Output printed before it stays on stdout.
 
+### Error recovery
+
+After a syntax error the parser calls `synchronize()` to find where the next statement can start, then keeps parsing. One run reports every syntax error.
+
+- `synchronize()` always consumes at least one token first. A bad token can never be read twice, so recovery cannot loop forever or hit the harness 15-second limit.
+- It then drops tokens until it has just passed a `;`, or the next token is a statement-start keyword (`var`, `print`, `if`, `while`, `for`, `return`, `func`, and the other keywords listed in `synchronize()`).
+- Errors print to stderr as found. If there was any, the script exits 65 and nothing runs, so stdout stays empty.
 ## Grammar
 
 Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals are quoted; non-terminals aren't. Rules are ordered from lowest precedence (`program`) to highest (`primary`); each rule delegates to the one below it, which is what makes precedence a consequence of call order rather than a checked table. 
@@ -243,6 +250,10 @@ and --eval, preserving the earlier labs' behavior.
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
 
 `program`'s `;`-per-expression rule is what `./run --parse` uses to split a `.crd` file into separate trees, one printed line per expression (see Whitespace and termination).
+### Declarations and assignment
+
+- `var` is legal only where a `declaration` is allowed: the top level of a script. It is not an expression, so `print var x;` and `1 + var x;` are syntax errors.
+- The assignment target is checked while parsing, not while running. The parser reads the left side as a normal expression first. If `=` follows, it accepts the left side only when it is a bare identifier. `1 = 2`, `a + b = c` and `(a) = 1` give `Invalid assignment target.` on stderr and exit 65, before any statement runs.
 
 ## Semantics
 ### Scope, binding and lifetime
