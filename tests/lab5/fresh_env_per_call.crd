@@ -1,0 +1,8 @@
+// Each call gets a new scope, so locals start fresh and vanish after.
+func count(n) {
+    var local = n * 10;
+    print local;
+}
+count(1); // expect: 10
+count(2); // expect: 20
+print local; // expect runtime error: Undefined variable 'local'.

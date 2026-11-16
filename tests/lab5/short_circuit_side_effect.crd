@@ -1,0 +1,5 @@
+// The right side must not run, or "evaluated" would appear in the output.
+func side() { print "evaluated"; }
+false and side();
+true or side();
+print "done"; // expect: done
