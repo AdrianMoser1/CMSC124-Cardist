@@ -133,7 +133,33 @@ func (p *Parser) unary() Expr {
 		return &UnaryExpr{Operator: operator, Right: right}
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+// call → primary ( "(" arguments? ")" )*
+// Calling is postfix on any expression, so f()() and (f)() parse too.
+func (p *Parser) call() Expr {
+	expr := p.primary()
+	for !p.panicMode && p.match(scanner.TOKEN_LEFT_PAREN) {
+		var args []Expr
+		if !p.check(scanner.TOKEN_RIGHT_PAREN) {
+			for {
+				args = append(args, p.expression())
+				if p.panicMode {
+					return nil
+				}
+				if !p.match(scanner.TOKEN_COMMA) {
+					break
+				}
+			}
+		}
+		paren, err := p.consume(scanner.TOKEN_RIGHT_PAREN, "Expect ')' after arguments.")
+		if err != nil {
+			return nil
+		}
+		expr = &CallExpr{Callee: expr, Paren: paren, Arguments: args}
+	}
+	return expr
 }
 
 func (p *Parser) primary() Expr {
