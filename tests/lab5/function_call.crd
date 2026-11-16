@@ -1,0 +1,14 @@
+func greet(name, times) {
+    print "hi " + name;
+    print times;
+}
+greet("Ada", 2); // expect: hi Ada
+                 // expect: 2
+
+func noArgs() { print "no args"; }
+noArgs(); // expect: no args
+
+// A function is a value: it can be printed and stored in a variable.
+print noArgs; // expect: <fn noArgs>
+var alias = noArgs;
+alias(); // expect: no args
