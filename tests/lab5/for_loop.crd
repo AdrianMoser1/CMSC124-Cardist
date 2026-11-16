@@ -1,0 +1,40 @@
+// All three clauses.
+for (var i = 0; i < 3; i = i + 1) {
+    print i; // expect: 0
+             // expect: 1
+             // expect: 2
+}
+
+// Single-statement body, no braces.
+for (var k = 0; k < 2; k = k + 1) print k * 10; // expect: 0
+                                                // expect: 10
+
+// Condition false at the start: zero passes.
+for (var z = 5; z < 3; z = z + 1) print "never";
+
+// Empty initializer: uses a variable declared before the loop.
+var j = 0;
+for (; j < 2; j = j + 1) print j; // expect: 0
+                                  // expect: 1
+print j; // expect: 2
+
+// Empty increment: the body moves the counter.
+for (var m = 0; m < 2;) {
+    print m; // expect: 0
+             // expect: 1
+    m = m + 1;
+}
+
+// Expression initializer.
+var e;
+for (e = 7; e < 9; e = e + 1) print e; // expect: 7
+                                       // expect: 8
+
+// Empty condition means true. No break yet, so a runtime error ends the loop.
+// Keep this last: the error stops the file.
+for (var n = 0;; n = n + 1) {
+    print n; // expect: 0
+             // expect: 1
+    if (n == 1) "a" - 1;
+}
+// expect runtime error: Operands must be numbers.
