@@ -207,9 +207,11 @@ Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals
 script      → declaration* EOF
 declaration → varDecl | statement
 varDecl     → "var" IDENTIFIER ( "=" expression )? ";"
-statement   → ifStmt | whileStmt | printStmt | block | exprStmt
+statement   → ifStmt | whileStmt | forStmt | printStmt | block | exprStmt
 ifStmt      → "if" "(" expression ")" statement ( "else" statement )?
 whileStmt   → "while" "(" expression ")" statement
+forStmt     → "for" "(" ( varDecl | exprStmt | ";" )
+              expression? ";" expression? ")" statement
 block       → "{" declaration* "}"
 printStmt   → "print" expression ";"
 exprStmt    → expression ";"
@@ -244,7 +246,12 @@ and --eval, preserving the earlier labs' behavior.
 - Left recursion is avoided throughout: every binary rule calls its next-tighter neighbor before it can loop, and `unary`'s self-reference always consumes a `!` or `-` first.
 - Repetition is imperative: `while` re-checks its condition before every pass
   and runs the body only while it is truthy (only `false` and `nil` are falsey).
-- `for` comes in Week 2, desugared to `while`.
+- `for` is desugared in the parser (`parser/for_stmt.go`); there is no `for` node and the evaluator has no `for` case:
+  `for (init; cond; incr) body` becomes `{ init; while (cond) { body; incr; } }`.
+  - Every clause is optional. An empty condition becomes `true`, so `for (;;)` loops forever.
+  - The outer block holds `init`, so a loop variable declared there is gone after the loop (`print i;` after it is `Undefined variable 'i'.`).
+  - `init` is a `var` declaration, an expression statement, or just `;`.
+- `and` and `or` parse as ordinary `BinaryExpr` nodes. The short-circuit happens in the evaluator, which skips the right operand when the left already decides. `or` sits below `and`, so `a or b and c` is `a or (b and c)`.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
 
