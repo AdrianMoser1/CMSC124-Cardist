@@ -1,0 +1,1 @@
+func broken { print 1; } // expect error: Expect '(' after function name.

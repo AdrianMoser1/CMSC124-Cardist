@@ -24,7 +24,7 @@ A fresh clone needs the Go version in `go.mod` (or newer) on PATH; no other depe
 | `./run --tokenize <file>` | Scans the file and prints its token stream. |
 | `./run --parse <file>` | Scans and parses the file, then prints its AST, one expression per line, in parenthesized prefix form. |
 | `./run --eval <file>` | Scans, parses and evaluates the file, printing the value of each expression, one per line. |
-| `./run` | Starts the REPL: scans, parses and evaluates one line at a time and prints the computed value. A bad line (static or runtime error) prints its error on stderr and returns the prompt. |
+| `./run` | Starts the REPL. One evaluator for the whole session, so variables persist. A line ending in `;` or `}` runs as statements, and a bare expression prints its value. A bad line prints its error on stderr and returns the prompt. |
 
 | Exit code | Meaning |
 |---|---|
@@ -205,7 +205,9 @@ Cardist's expression grammar, in the textbook's `*`/`?`/`|` shorthand. Terminals
 
 ```
 script      → declaration* EOF
-declaration → varDecl | statement
+declaration → funDecl | varDecl | statement
+funDecl     → "func" IDENTIFIER "(" parameters? ")" block
+parameters  → IDENTIFIER ( "," IDENTIFIER )*
 varDecl     → "var" IDENTIFIER ( "=" expression )? ";"
 statement   → ifStmt | whileStmt | forStmt | printStmt | block | exprStmt
 ifStmt      → "if" "(" expression ")" statement ( "else" statement )?
@@ -226,7 +228,9 @@ equality    → comparison ( ( "!=" | "==" ) comparison )*
 comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )*
 term        → factor ( ( "-" | "+" ) factor )*
 factor      → unary ( ( "/" | "*" ) unary )*
-unary       → ( "!" | "-" ) unary | primary
+unary       → ( "!" | "-" ) unary | call
+call        → primary ( "(" arguments? ")" )*
+arguments   → expression ( "," expression )*
 primary     → NUMBER | STRING | IDENTIFIER
             | "true" | "false" | "nil"
             | "(" expression ")"
@@ -252,6 +256,18 @@ and --eval, preserving the earlier labs' behavior.
   - The outer block holds `init`, so a loop variable declared there is gone after the loop (`print i;` after it is `Undefined variable 'i'.`).
   - `init` is a `var` declaration, an expression statement, or just `;`.
 - `and` and `or` parse as ordinary `BinaryExpr` nodes. The short-circuit happens in the evaluator, which skips the right operand when the left already decides. `or` sits below `and`, so `a or b and c` is `a or (b and c)`.
+- `func` declares a named function. It is a declaration like `var`, and its
+  name is an ordinary variable holding the function, so functions can be
+  stored, reassigned and printed (`<fn name>`).
+- A call is postfix on any expression, so `f()()` and `(f)()` parse.
+  Calling a non-function is a runtime error (`Can only call functions.`), and
+  so is a wrong argument count (`Expected N arguments but got M.`).
+- A function keeps the scope it was written in (its closure). Each call
+  runs in a new scope enclosing that closure, not the caller's scope. This
+  is what makes Cardist lexical, and it keeps a block's variables alive after
+  the block ends if a function written inside it still refers to them.
+- Until `return` arrives (Week 3), every call evaluates to `nil`.
+- `for` comes in Week 2, desugared to `while`.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
 
@@ -262,15 +278,55 @@ and --eval, preserving the earlier labs' behavior.
 - The assignment target is checked while parsing, not while running. The parser reads the left side as a normal expression first. If `=` follows, it accepts the left side only when it is a bare identifier. `1 = 2`, `a + b = c` and `(a) = 1` give `Invalid assignment target.` on stderr and exit 65, before any statement runs.
 
 ## Semantics
+
+### Paradigm, mutability and output
+- **Paradigm:** imperative and statement-based. A program is a list of
+  statements run in order; values are dynamically typed.
+- **Mutability:** every variable is mutable through `=`. There are no
+  constants. A value's type can change too (`x = 1; x = "one";`).
+- **Output:** in a file, only `print` writes to stdout; an expression
+  statement like `2 + 3;` runs and its value is thrown away. In the REPL, a
+  bare expression (`x + 1;` or `x + 1`) also prints its value.
+
+### Scope rule: static (lexical)
+Cardist uses static, or lexical, scope. A name means whatever it meant
+where the code is written, not whoever is running it.
+
+How the code does it: when a block runs, `executeBlock` gets
+`NewEnvironment(e.env)`, a new scope whose enclosing link is the scope the
+block is written in. Lookup (`Get`) and assignment (`Assign`) walk those
+links outward and use the first match. The links follow the source, so
+lookup follows the source.
+
+    var damage = 6;          // global: damage = 6
+    {
+        var damage = 9;      // block:  damage = 9 -> links to global
+        print damage;        // 9 (found in the block, stops there)
+    }
+    print damage;            // 6 (block scope is gone, global is back)
+
+Why not dynamic scope: Cardist scripts describe cards, and a card's
+effect should mean what its text says no matter who plays it or when.
+With dynamic scope, a name inside an effect would pick up the value from
+whoever called it. The same card would deal different damage depending on
+the caller, and you couldn't tell by reading the card. Lexical scope keeps
+every card predictable: read the code around it and you know what each
+name refers to.
+
+Blocks alone can't show the difference between static and dynamic
+scope, since every block is also run where it is written. Functions (Lab 5)
+can: `tests/lab5/lexical_scope.crd` calls a function from a scope that has
+its own `a`, and the function still sees the `a` from where it was
+defined.
 ### Scope, binding and lifetime
-- Scope is lexical: each block gets a new environment linked to the one it is
-  written in. Lookup and assignment walk outward to the innermost match; `var`
-  always binds in the current scope, so it shadows instead of overwriting.
 - Assignment never creates a binding. Redeclaring in the same scope overwrites.
 - Names, values and types are bound at run time; values and types can change.
 - Globals last for the whole run or REPL session. Block bindings start when
   their `var` runs and stop being visible when the block exits (restored with
-  `defer`, including on errors). Go's garbage collector frees the storage.
+  `defer`, including on errors). Leaving a block only ends visibility: the Go
+  map is freed later by the garbage collector, and a closure can keep it
+  alive. `block_scope_ends.crd` tests the visibility half;
+  `tests/lab5/closure_capture.crd` tests the storage half.
 - `var x;` is `nil`. Undefined names are runtime errors (exit 70), which keeps
   Lab 5 recursion working without a resolver pass.
 - The REPL shares one evaluator; a top-level `expr;` or a bare `expr` prints.
@@ -437,6 +493,9 @@ Token(type=EOF, lexeme=, literal=null, line=7)
 - No block comments.
 - `enemy`/`intent`/`artifact`/`elixir` are reserved keywords but their
   runtime semantics will be implemented later on.
+- The REPL reads one line per entry, so a block has to fit on one line there.
+- `turn`, `block`, `card`, `enemy`, `player` and the other domain keywords are
+  reserved, so they can't be used as variable names.
 
 ## Changelog
 

@@ -1,0 +1,8 @@
+// The caller has its own a, but show sees the a from where it was written.
+// With dynamic scope this would print "local".
+var a = "global";
+func show() { print a; }
+{
+    var a = "local";
+    show(); // expect: global
+}

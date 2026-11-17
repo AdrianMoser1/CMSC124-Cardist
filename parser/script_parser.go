@@ -34,6 +34,8 @@ func (p *Parser) declaration() Stmt {
 	var stmt Stmt
 	if p.match(scanner.TOKEN_VAR) {
 		stmt = p.varDeclaration()
+	} else if p.match(scanner.TOKEN_FUNC) {
+		stmt = p.funDeclaration()
 	} else {
 		stmt = p.statement()
 	}

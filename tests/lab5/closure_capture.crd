@@ -1,0 +1,8 @@
+// The block ends, but show keeps the scope it was written in.
+var f;
+{
+    var secret = "kept";
+    func show() { print secret; }
+    f = show;
+}
+f(); // expect: kept

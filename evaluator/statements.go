@@ -79,6 +79,11 @@ func (e *Evaluator) execute(statement parser.Stmt) error {
 		}
 		return nil
 
+	case *parser.FunctionStmt:
+		// The function keeps e.env, the scope it is written in (its closure).
+		e.env.Define(stmt.Name.Lexeme, &UserFunction{decl: stmt, closure: e.env})
+		return nil
+
 	case *parser.BlockStmt:
 		// Enclosing = where the block is written, which makes scope lexical.
 		return e.executeBlock(stmt.Statements, NewEnvironment(e.env))

@@ -27,6 +27,7 @@ type Visitor interface {
 	VisitGrouping(expr *GroupingExpr) any
 	VisitVariable(expr *VariableExpr) any
 	VisitAssign(expr *AssignExpr) any
+	VisitCall(expr *CallExpr) any
 }
 
 type LiteralExpr struct {
@@ -81,4 +82,16 @@ type AssignExpr struct {
 
 func (e *AssignExpr) Accept(v Visitor) any {
 	return v.VisitAssign(e)
+}
+
+// CallExpr is callee(arguments). Paren is the closing ')', kept for the
+// line number in call errors.
+type CallExpr struct {
+	Callee    Expr
+	Paren     scanner.Token
+	Arguments []Expr
+}
+
+func (e *CallExpr) Accept(v Visitor) any {
+	return v.VisitCall(e)
 }

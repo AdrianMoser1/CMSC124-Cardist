@@ -77,7 +77,9 @@ func (p *AstPrinter) VisitVariable(expr *VariableExpr) any {
 func (p *AstPrinter) VisitAssign(expr *AssignExpr) any {
 	return p.parenthesize("= "+expr.Name.Lexeme, expr.Value) // (= x 1.0)
 }
-
+func (p *AstPrinter) VisitCall(expr *CallExpr) any {
+	return p.parenthesize("call", append([]Expr{expr.Callee}, expr.Arguments...)...)
+}
 func (p *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 	var builder strings.Builder
 
