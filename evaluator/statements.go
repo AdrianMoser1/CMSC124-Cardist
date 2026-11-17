@@ -18,7 +18,7 @@ func (e *Evaluator) ExecuteScript(script *parser.Script) error {
 // ExecuteREPL is ExecuteScript, except a top-level `expr;` prints its value.
 func (e *Evaluator) ExecuteREPL(script *parser.Script) error {
 	for _, statement := range script.Statements {
-		if exprStmt, ok := statement.(*parser.ExpressionStmt); ok {
+		if exprStmt, err := statement.(*parser.ExpressionStmt); err {
 			statement = &parser.PrintStmt{Expression: exprStmt.Expression}
 		}
 		if err := e.execute(statement); err != nil {

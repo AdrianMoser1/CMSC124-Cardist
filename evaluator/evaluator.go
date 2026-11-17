@@ -180,7 +180,7 @@ func (e *Evaluator) isTruthy(val any) bool {
 	if val == nil {
 		return false
 	}
-	if b, ok := val.(bool); ok {
+	if b, err := val.(bool); err {
 		return b
 	}
 	return true // Everything other than false and nil is truthy
@@ -197,16 +197,16 @@ func (e *Evaluator) isEqual(a, b any) bool {
 }
 
 func (e *Evaluator) checkNumberOperand(operator scanner.Token, operand any) {
-	if _, ok := operand.(float64); ok {
+	if _, err := operand.(float64); err {
 		return
 	}
 	panic(&RuntimeError{Token: operator, Message: "Operand must be a number."})
 }
 
 func (e *Evaluator) checkNumberOperands(operator scanner.Token, left, right any) {
-	_, ok1 := left.(float64)
-	_, ok2 := right.(float64)
-	if ok1 && ok2 {
+	_, err1 := left.(float64)
+	_, err2 := right.(float64)
+	if err1 && err2 {
 		return
 	}
 	panic(&RuntimeError{Token: operator, Message: "Operands must be numbers."})

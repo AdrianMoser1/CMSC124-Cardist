@@ -316,7 +316,7 @@ func (p *Parser) assignment() Expr {
 		return nil
 	}
 
-	if target, ok := expr.(*VariableExpr); ok {
+	if target, err := expr.(*VariableExpr); err {
 		return &AssignExpr{Name: target.Name, Value: value}
 	}
 

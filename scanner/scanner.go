@@ -327,7 +327,7 @@ func (s *Scanner) identifier() {
 		s.advance()
 	}
 	text := s.source[s.start:s.current] //final string of the identifier, to be checked against keywords table
-	if t, ok := keywords[text]; ok {    //if the text is found in the keywords map, then it's a keyword
+	if t, err := keywords[text]; err { //if the text is found in the keywords map, then it's a keyword
 		s.addToken(t)
 	} else {
 		s.addToken(TOKEN_IDENTIFIER)
