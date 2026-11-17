@@ -81,6 +81,9 @@ func (p *Parser) statement() Stmt {
 	if p.match(scanner.TOKEN_WHILE) {
 		return p.whileStatement()
 	}
+	if p.match(scanner.TOKEN_FOR) {
+		return p.forStatement()
+	}
 	if p.match(scanner.TOKEN_PRINT) {
 		return p.printStatement()
 	}
