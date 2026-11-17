@@ -25,7 +25,7 @@ func (env *Environment) Define(name string, value any) {
 
 // Get returns the value from the innermost scope that holds the name.
 func (env *Environment) Get(name scanner.Token) any {
-	if value, ok := env.values[name.Lexeme]; ok {
+	if value, err := env.values[name.Lexeme]; err {
 		return value
 	}
 	if env.enclosing != nil {
@@ -37,7 +37,7 @@ func (env *Environment) Get(name scanner.Token) any {
 // Assign updates an existing binding. It never creates one, so a misspelled
 // name is an error instead of a new variable.
 func (env *Environment) Assign(name scanner.Token, value any) {
-	if _, ok := env.values[name.Lexeme]; ok {
+	if _, err := env.values[name.Lexeme]; err {
 		env.values[name.Lexeme] = value
 		return
 	}

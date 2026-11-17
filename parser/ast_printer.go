@@ -18,7 +18,7 @@ func (p *AstPrinter) Print(expr Expr) string {
 		return ""
 	}
 	res := expr.Accept(p)
-	if s, ok := res.(string); ok {
+	if s, err := res.(string); err {
 		return s
 	}
 	return ""
@@ -31,7 +31,7 @@ func (p *AstPrinter) VisitProgram(program *Program) any {
 		if expr == nil {
 			continue
 		}
-		if s, ok := expr.Accept(p).(string); ok {
+		if s, err := expr.Accept(p).(string); err {
 			lines = append(lines, s)
 		}
 	}
@@ -88,7 +88,7 @@ func (p *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 
 	for _, expr := range exprs {
 		builder.WriteString(" ")
-		if s, ok := expr.Accept(p).(string); ok {
+		if s, err := expr.Accept(p).(string); err {
 			builder.WriteString(s)
 		}
 	}

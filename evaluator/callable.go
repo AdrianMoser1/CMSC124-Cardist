@@ -40,8 +40,8 @@ func (e *Evaluator) VisitCall(expr *parser.CallExpr) any {
 		args[i] = arg.Accept(e)
 	}
 
-	fn, ok := callee.(Callable)
-	if !ok {
+	fn, err := callee.(Callable)
+	if !err {
 		panic(&RuntimeError{Token: expr.Paren, Message: "Can only call functions."})
 	}
 	if len(args) != fn.Arity() {
