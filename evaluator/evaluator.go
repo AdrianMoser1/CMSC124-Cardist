@@ -24,6 +24,10 @@ type Evaluator struct {
 
 	// env is the scope currently in use. It starts as the global scope.
 	env *Environment
+
+	// callDepth counts active calls. Go cannot recover from a real stack
+	// overflow, so VisitCall raises a Cardist error before that happens.
+	callDepth int
 }
 
 func NewEvaluator() *Evaluator {
