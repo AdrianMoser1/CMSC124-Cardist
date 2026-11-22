@@ -1,0 +1,22 @@
+// Closures made in a for loop share its loop variable: the loop has one i,
+// and both functions read it after the loop ended at 3.
+var first;
+var second;
+for (var i = 1; i <= 2; i = i + 1) {
+    func show() { print i; }
+    if (i == 1) first = show; else second = show;
+}
+first();  // expect: 3
+second(); // expect: 3
+
+// Copying i into a var inside the body gives each pass its own value,
+// because the body block gets a fresh scope every pass.
+var a;
+var b;
+for (var i = 1; i <= 2; i = i + 1) {
+    var copy = i;
+    func show() { print copy; }
+    if (i == 1) a = show; else b = show;
+}
+a(); // expect: 1
+b(); // expect: 2
