@@ -267,7 +267,6 @@ and --eval, preserving the earlier labs' behavior.
   is what makes Cardist lexical, and it keeps a block's variables alive after
   the block ends if a function written inside it still refers to them.
 - Until `return` arrives (Week 3), every call evaluates to `nil`.
-- `for` comes in Week 2, desugared to `while`.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
 
@@ -345,7 +344,7 @@ Left to right, always. For a binary expression the left operand is fully evaluat
 
 Runtime values use Go `any`: numbers are `float64`, strings are `string`, booleans are `bool`, and `nil` represents absence. `Expr.Accept` and visitor methods return `any` so the AST printer can return text while the evaluator returns runtime values. Operators retain their scanner token, including `Line`, for diagnostics.
 
-The evaluator walks each expression AST recursively. Literals return their value; grouping returns its inner value. Unary operators evaluate their operand first. Ordinary binary operators evaluate the left operand, then the right, then apply the operator. Program expressions run in source order. There are no variables yet: a bare identifier currently evaluates as the string containing its name.
+The evaluator walks each expression AST recursively. Literals return their value; grouping returns its inner value. Unary operators evaluate their operand first. Ordinary binary operators evaluate the left operand, then the right, then apply the operator. Program expressions run in source order.
 
 ### Operators and type checks
 
@@ -363,15 +362,30 @@ The evaluator walks each expression AST recursively. Literals return their value
 Only `false` and `nil` are falsey. Everything else, including `0` and `""`, is truthy. `and` and `or` short-circuit and return an operand, not necessarily a boolean: `true or 1 / 0` returns `true` without a division error.
 
 ### Value printing
-### Value printing
 | Value | Prints as | Example |
 |---|---|---|
 | number | shortest exact form, no trailing `.0` | `5.0` -> `5`, `3.5` -> `3.5` |
 | string | the raw text, no quotes | `"hi"` -> `hi` |
 | boolean | `true` / `false` | |
 | nil | `nil` | |
+| native function | `<native fn>` | `print clock;` |
 
 One function, `FormatValue` in `evaluator/printer.go`, is used by both `--eval` and the REPL, so the two cannot disagree. `--parse` is unchanged and still prints numbers with a decimal point (`6.0`), because it prints tree nodes, not computed values.
+
+### Native functions
+
+Natives are Go code behind the same `Callable` interface user functions use, so `VisitCall` checks arity and "not callable" once for both. They are defined in the global environment before any user code runs, and they are ordinary values: `var c = clock;` works, and so does passing `str` as an argument.
+
+| Name | Arity | Returns | Notes |
+|---|---|---|---|
+| `clock()` | 0 | number | Wall-clock time in seconds. Compare two readings; never expect an exact value. |
+| `str(x)` | 1 | string | Any value formatted exactly as `print` shows it: `str(5)` is `"5"`, `str(nil)` is `"nil"`. |
+
+Output stays the `print` statement. No native writes to stdout, so `print str(5) + " hp";` prints `5 hp`. A wrong argument count is the usual runtime error, for example `Expected 0 arguments but got 1.` for `clock(1)`.
+
+### Deep recursion
+
+The evaluator counts active calls. Past 1000 nested calls it raises `[line N] Runtime error: Stack overflow.` and exits 70. Go cannot recover from a real stack overflow (it crashes with a Go trace and the wrong exit code), so the counter trips first. Ordinary recursion such as `fib(20)` stays far below the limit.
 
 ### Truthiness
 Only `false` and `nil` are falsey. Everything else is truthy, including `0`, `""`, and `"false"`. So `!0` is `false` and `!nil` is `true`. This is the Lox rule, written once in one function (`isTruthy`).
@@ -400,8 +414,6 @@ If the evaluator itself hits an unexpected Go panic, it is caught at the single 
 
 ### Statement terminator and identifiers
 A `;` after an expression is optional; the parser consumes it if present, so each expression in a file is evaluated and printed in source order. The test files in `tests/lab3` end every expression in `;` for readability.
-
-Variables don't exist yet (Lab 4). Until then the parser turns a bare identifier into a string literal holding its own name, so `foo;` evaluates to `foo`.
 
 ### Errors and execution
 
@@ -494,6 +506,7 @@ Token(type=EOF, lexeme=, literal=null, line=7)
 - `enemy`/`intent`/`artifact`/`elixir` are reserved keywords but their
   runtime semantics will be implemented later on.
 - The REPL reads one line per entry, so a block has to fit on one line there.
+- Calls nest at most 1000 deep. A program that needs deeper recursion hits `Stack overflow.`
 - `turn`, `block`, `card`, `enemy`, `player` and the other domain keywords are
   reserved, so they can't be used as variable names.
 
@@ -505,6 +518,7 @@ Token(type=EOF, lexeme=, literal=null, line=7)
 | Lab 2 | Parser and AST: expression grammar with precedence, `--parse` output format, syntax errors (exit 65). |
 | Lab 3 | Evaluator: `--eval`, value printing rules, truthiness, runtime errors (exit 70), division by zero is an error. REPL prints values. |
 | Lab 4 | Statements and state: `print` and expression statements, `var` declarations, variable lookup, assignment with parse-time target check. Plain `./run <file>` executes a script. Syntax errors recover at statement boundaries; all are reported before exit 65. |
+| Lab 5 | Control flow and functions: `for` (desugared to `while` in the parser), `elseif`, short-circuit `and`/`or`, function calls with arity checks, native functions `clock` and `str`, runtime error `Stack overflow.` past 1000 nested calls. |
 
 ## Bug log
 
