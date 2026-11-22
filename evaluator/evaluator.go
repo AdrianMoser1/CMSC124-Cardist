@@ -27,7 +27,11 @@ type Evaluator struct {
 }
 
 func NewEvaluator() *Evaluator {
-	return &Evaluator{env: NewEnvironment(nil)}
+	globals := NewEnvironment(nil)
+	for name, fn := range natives {
+		globals.Define(name, fn)
+	}
+	return &Evaluator{env: globals}
 }
 
 // Main evaluation entry point

@@ -29,6 +29,8 @@ func FormatValue(v any) string {
 		return formatNumber(val)
 	case *UserFunction:
 		return "<fn " + val.decl.Name.Lexeme + ">"
+	case *nativeFn:
+		return "<native fn>"
 	default:
 		// Unreachable if the evaluator only produces the four types above.
 		// Returning text (instead of panicking) keeps a host-side bug from
