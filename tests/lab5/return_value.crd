@@ -1,0 +1,15 @@
+func add(a, b) { return a + b; }
+print add(2, 3); // expect: 5
+
+func nothing() { return; }
+print nothing(); // expect: nil
+
+func noReturn() { var x = 1; }
+print noReturn(); // expect: nil
+
+// Code after a return never runs.
+func early() {
+    return "first";
+    print "never";
+}
+print early(); // expect: first
