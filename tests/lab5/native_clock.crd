@@ -1,0 +1,9 @@
+// Never expect an exact clock value. Compare two readings.
+var a = clock();
+var b = clock();
+print b >= a; // expect: true
+print a > 0;  // expect: true
+
+// A native is a value. Printing it shows a fixed label.
+print clock; // expect: <native fn>
+print str;   // expect: <native fn>
