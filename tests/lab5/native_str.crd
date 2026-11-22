@@ -1,0 +1,11 @@
+// str gives the same text print shows, for every value type.
+print str(5);    // expect: 5
+print str(3.5);  // expect: 3.5
+print str("hi"); // expect: hi
+print str(true); // expect: true
+print str(nil);  // expect: nil
+
+// The result is a real string, so + concatenates instead of failing.
+print str(5) + " hp";     // expect: 5 hp
+print str(1) + str(2);    // expect: 12
+print str(str(7)) + "!";  // expect: 7!

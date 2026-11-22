@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+// maxCallDepth is far below where Go's stack runs out, and far above what
+// ordinary recursion such as fib(20) needs.
+const maxCallDepth = 1000
+
 // Callable is anything a call expression can invoke. Week 3's natives
 // implement it too, so arity and "not callable" are checked in one place.
 type Callable interface {
@@ -48,5 +52,10 @@ func (e *Evaluator) VisitCall(expr *parser.CallExpr) any {
 		panic(&RuntimeError{Token: expr.Paren, Message: fmt.Sprintf(
 			"Expected %d arguments but got %d.", fn.Arity(), len(args))})
 	}
+	if e.callDepth >= maxCallDepth {
+		panic(&RuntimeError{Token: expr.Paren, Message: "Stack overflow."})
+	}
+	e.callDepth++
+	defer func() { e.callDepth-- }() // also runs when an error unwinds through here
 	return fn.Call(e, args)
 }

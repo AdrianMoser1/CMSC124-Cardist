@@ -1,0 +1,26 @@
+// No return yet: these functions do their work with print.
+func shout(s) { print s + "!"; }
+func twice(f, x) {
+    f(x);
+    f(x);
+}
+
+// A function passed as an argument.
+twice(shout, "hi"); // expect: hi!
+                    // expect: hi!
+
+// A function stored in a variable, then called through it.
+var g = shout;
+g("yo"); // expect: yo!
+
+// Natives are values too: store one, call through the variable.
+var c = clock;
+print c() >= 0; // expect: true
+var s = str;
+print s(42);    // expect: 42
+
+// A native passed as an argument to a user function.
+func show(f, x) { print f(x); }
+show(str, 7); // expect: 7
+func check(f) { print f() >= 0; }
+check(clock); // expect: true
