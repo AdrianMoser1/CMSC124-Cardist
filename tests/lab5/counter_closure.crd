@@ -1,0 +1,19 @@
+// The counter keeps count alive after makeCounter returns.
+func makeCounter() {
+    var count = 0;
+    func increment() {
+        count = count + 1;
+        return count;
+    }
+    return increment;
+}
+
+var counter = makeCounter();
+print counter(); // expect: 1
+print counter(); // expect: 2
+print counter(); // expect: 3
+
+// A second call to makeCounter gets its own count.
+var other = makeCounter();
+print other();   // expect: 1
+print counter(); // expect: 4

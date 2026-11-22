@@ -52,6 +52,18 @@ func (e *Evaluator) execute(statement parser.Stmt) error {
 		e.env.Define(stmt.Name.Lexeme, value)
 		return nil
 
+	case *parser.ReturnStmt:
+		var value any // bare `return;` gives nil
+		if stmt.Value != nil {
+			var err error
+			if value, err = e.Evaluate(stmt.Value); err != nil {
+				return err
+			}
+		}
+		// Sent back like an error so every enclosing loop and block stops;
+		// UserFunction.Call is the only place that catches it.
+		return &returnSignal{keyword: stmt.Keyword, value: value}
+
 	case *parser.WhileStmt:
 		for {
 			condition, err := e.Evaluate(stmt.Condition)

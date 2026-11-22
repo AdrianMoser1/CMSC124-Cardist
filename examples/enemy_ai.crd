@@ -1,0 +1,70 @@
+// Cardist showcase: a small fight against an enemy with a repeating plan.
+// Run it with: ./run examples/enemy_ai.crd
+//
+// - the enemy's plan is a closure: it remembers which step it is on
+// - the player picks a card each round by reacting to that plan
+// - poison damage is added up with a recursive function
+// - the fight is a while loop that stops when either side drops
+
+// Returns a function that cycles 1, 2, 3, 1, 2, 3, ...
+// 1 = attack, 2 = defend, 3 = power up
+func makePlan() {
+    var step = 0;
+    func next() {
+        step = step + 1;
+        if (step > 3) step = 1;
+        return step;
+    }
+    return next;
+}
+
+func planName(move) {
+    if (move == 1) return "enemy attacks";
+    elseif (move == 2) return "enemy defends";
+    return "enemy powers up";
+}
+
+// React to what the enemy is about to do.
+func chooseCard(move) {
+    if (move == 1) return "guard";    // block the hit
+    if (move == 2) return "poison";   // poison goes through its defense
+    return "strike";                  // hit hard while it powers up
+}
+
+// Poison ticks n, then n - 1, ... down to 1.
+func poisonTotal(n) {
+    if (n <= 0) return 0;
+    return n + poisonTotal(n - 1);
+}
+
+var playerHp = 30;
+var enemyHp = 45;
+var enemyStrength = 6;
+var nextMove = makePlan();
+var round = 0;
+
+while (playerHp > 0 and enemyHp > 0) {
+    round = round + 1;
+    var move = nextMove();
+    var play = chooseCard(move);
+    var guard = 0;
+
+    if (play == "strike") enemyHp = enemyHp - 10;
+    elseif (play == "poison") enemyHp = enemyHp - poisonTotal(4);
+    else guard = 8;
+
+    if (move == 1) {
+        var hit = enemyStrength - guard;
+        if (hit > 0) playerHp = playerHp - hit;
+    } elseif (move == 3) {
+        enemyStrength = enemyStrength + 3;
+    }
+
+    print round;
+    print planName(move);
+    print play;
+    print enemyHp;
+    print playerHp;
+}
+
+if (enemyHp <= 0) print "you win"; else print "you lose";

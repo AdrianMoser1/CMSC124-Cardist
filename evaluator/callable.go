@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"cardist/parser"
+	"cardist/scanner"
 	"fmt"
 )
 
@@ -31,10 +32,26 @@ func (f *UserFunction) Call(e *Evaluator, args []any) any {
 	for i, param := range f.decl.Params {
 		env.Define(param.Lexeme, args[i])
 	}
-	if err := e.executeBlock(f.decl.Body, env); err != nil {
+	err := e.executeBlock(f.decl.Body, env)
+	if ret, isReturn := err.(*returnSignal); isReturn {
+		return ret.value
+	}
+	if err != nil {
 		panic(err) // Evaluate's recover turns this back into a runtime error
 	}
-	return nil // shortcut: no `return` yet, so every call yields nil; Week 3 adds results
+	return nil // fell off the end of the body
+}
+
+// returnSignal carries a `return` value out of the function body. It travels
+// as an error so loops and blocks stop and executeBlock still restores scope.
+// If nothing catches it, the return was outside any function.
+type returnSignal struct {
+	keyword scanner.Token
+	value   any
+}
+
+func (r *returnSignal) Error() string {
+	return fmt.Sprintf("[line %d] Runtime error: Can't return from top-level code.", r.keyword.Line)
 }
 
 func (e *Evaluator) VisitCall(expr *parser.CallExpr) any {
