@@ -1,0 +1,19 @@
+// return leaves every loop and block it is inside, not just the innermost one.
+func firstProductOver(limit) {
+    for (var i = 0; i < 10; i = i + 1) {
+        var j = 0;
+        while (j < 10) {
+            if (i * j > limit) {
+                return i * j;
+            }
+            j = j + 1;
+        }
+    }
+    return -1;
+}
+print firstProductOver(20);   // expect: 21
+print firstProductOver(1000); // expect: -1
+
+// The caller's scope is back after the early return.
+var where = "global";
+print where; // expect: global

@@ -87,6 +87,9 @@ func (p *Parser) statement() Stmt {
 	if p.match(scanner.TOKEN_PRINT) {
 		return p.printStatement()
 	}
+	if p.match(scanner.TOKEN_RETURN) {
+		return p.returnStatement()
+	}
 	if p.match(scanner.TOKEN_LEFT_BRACE) {
 		return &BlockStmt{Statements: p.block()}
 	}

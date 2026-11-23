@@ -209,7 +209,8 @@ declaration → funDecl | varDecl | statement
 funDecl     → "func" IDENTIFIER "(" parameters? ")" block
 parameters  → IDENTIFIER ( "," IDENTIFIER )*
 varDecl     → "var" IDENTIFIER ( "=" expression )? ";"
-statement   → ifStmt | whileStmt | forStmt | printStmt | block | exprStmt
+statement   → ifStmt | whileStmt | forStmt | printStmt | returnStmt | block | exprStmt
+returnStmt  → "return" expression? ";"
 ifStmt      → "if" "(" expression ")" statement ( "else" statement )?
 whileStmt   → "while" "(" expression ")" statement
 forStmt     → "for" "(" ( varDecl | exprStmt | ";" )
@@ -266,7 +267,23 @@ and --eval, preserving the earlier labs' behavior.
   runs in a new scope enclosing that closure, not the caller's scope. This
   is what makes Cardist lexical, and it keeps a block's variables alive after
   the block ends if a function written inside it still refers to them.
-- Until `return` arrives (Week 3), every call evaluates to `nil`.
+- `return expr;` ends the function and gives `expr` as the call's value; a bare
+  `return;` or falling off the end gives `nil`. A return travels up through
+  every enclosing loop and block until the function call catches it, so an
+  early return inside nested `while`/`for`/`if` leaves all of them. Scope is
+  still restored on the way out.
+- `return` outside a function is a runtime error (exit 70): `Can't return from
+  top-level code.` Cardist has no resolver pass, so it is caught when it runs,
+  the same way undefined names are.
+- Closures keep the scope they were written in, so a returned function can
+  still read and change variables from the call that made it (`makeCounter`).
+  Each call to the outer function makes a fresh scope, so two counters never
+  share state.
+- Closures made inside a `for` loop share the loop variable: `for` is one outer
+  block, so there is one `i` and every closure sees its final value. To give
+  each pass its own value, copy it into a `var` inside the body
+  (`tests/lab5/loop_closures.crd`).
+- `for` comes in Week 2, desugared to `while`.
 
 `program` accepts zero or more expressions with optional semicolons. An empty or comment-only program succeeds without output. The AST has one `Program` root; `--parse` prints each expression subtree on its own line.
 

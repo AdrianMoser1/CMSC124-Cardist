@@ -1,0 +1,11 @@
+// Functions as results: each adder keeps its own base.
+func makeAdder(base) {
+    func add(x) { return base + x; }
+    return add;
+}
+var addTwo = makeAdder(2);
+var addTen = makeAdder(10);
+print addTwo(3); // expect: 5
+print addTen(3); // expect: 13
+print addTwo(3); // expect: 5
+print makeAdder(100)(1); // expect: 101
