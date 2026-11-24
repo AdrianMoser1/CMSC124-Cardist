@@ -1,0 +1,6 @@
+print draw(player, 3); // expect: 3
+print draw(player, 4); // expect: 4
+
+// 3 cards left in the pile, so asking for 5 moves only 3.
+print draw(player, 5); // expect: 3
+print draw(player, 1); // expect: 0

@@ -1,0 +1,9 @@
+print enemy;          // expect: <enemy hp=40 block=0>
+print deal(enemy, 6); // expect: 6
+print enemy;          // expect: <enemy hp=34 block=0>
+print deal(enemy, 0); // expect: 0
+
+// Overkill: only the HP that was really there counts, and HP stops at 0.
+print deal(enemy, 100); // expect: 34
+print enemy;            // expect: <enemy hp=0 block=0>
+print deal(enemy, 5);   // expect: 0
