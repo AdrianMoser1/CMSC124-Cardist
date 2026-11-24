@@ -74,5 +74,6 @@ func (e *Evaluator) VisitCall(expr *parser.CallExpr) any {
 	}
 	e.callDepth++
 	defer func() { e.callDepth-- }() // also runs when an error unwinds through here
+	e.callSite = expr.Paren
 	return fn.Call(e, args)
 }

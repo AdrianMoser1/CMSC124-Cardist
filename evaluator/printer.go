@@ -29,6 +29,8 @@ func FormatValue(v any) string {
 		return formatNumber(val)
 	case *UserFunction:
 		return "<fn " + val.decl.Name.Lexeme + ">"
+	case *Entity:
+		return val.String()
 	case *nativeFn:
 		return "<native fn>"
 	default:

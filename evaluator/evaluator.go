@@ -28,6 +28,10 @@ type Evaluator struct {
 	// callDepth counts active calls. Go cannot recover from a real stack
 	// overflow, so VisitCall raises a Cardist error before that happens.
 	callDepth int
+
+	// callSite is the `(` of the call being made, so natives can report
+	// runtime errors on the correct line.
+	callSite scanner.Token
 }
 
 func NewEvaluator() *Evaluator {
@@ -35,6 +39,7 @@ func NewEvaluator() *Evaluator {
 	for name, fn := range natives {
 		globals.Define(name, fn)
 	}
+	defineCombatants(globals)
 	return &Evaluator{env: globals}
 }
 
