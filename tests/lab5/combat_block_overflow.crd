@@ -1,0 +1,4 @@
+var amount = 1;
+for (var i = 0; i < 308; i = i + 1) amount = amount * 10;
+block(enemy, amount);
+block(enemy, amount); // expect runtime error: Block total is too large.

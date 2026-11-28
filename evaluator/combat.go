@@ -35,7 +35,7 @@ func (e *Evaluator) combatArgs(args []any) (*Entity, float64) {
 		panic(&RuntimeError{Token: e.callSite, Message: "Target must be the player or the enemy."})
 	}
 	amount, ok := args[1].(float64)
-	if !ok || amount < 0 || amount != math.Trunc(amount) { // NaN fails the last test too
+	if !ok || amount < 0 || math.IsInf(amount, 0) || amount != math.Trunc(amount) {
 		panic(&RuntimeError{Token: e.callSite, Message: "Amount must be a whole number, zero or more."})
 	}
 	return target, amount
@@ -56,8 +56,12 @@ func init() {
 	// block(target, n) -> number: adds block and returns the block now held.
 	natives["block"] = &nativeFn{arity: 2, fn: func(e *Evaluator, args []any) any {
 		target, amount := e.combatArgs(args)
-		target.block += amount
-		return target.block
+		total := target.block + amount
+		if math.IsInf(total, 0) {
+			panic(&RuntimeError{Token: e.callSite, Message: "Block total is too large."})
+		}
+		target.block = total
+		return total
 	}}
 
 	// draw(target, n) -> number: moves up to n cards from draw pile to hand.
