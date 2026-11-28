@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 binary=./build/interpreter
-if [[ -f "$binary.exe" ]]; then
-  binary="$binary.exe"
-fi
+# Match build.sh even when an executable from another platform is present.
+case "$OSTYPE" in
+  msys*|cygwin*|win32*) binary="$binary.exe" ;;
+esac
 exec "$binary" "$@"
