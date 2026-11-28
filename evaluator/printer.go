@@ -31,6 +31,8 @@ func FormatValue(v any) string {
 		return "<fn " + val.decl.Name.Lexeme + ">"
 	case *Entity:
 		return val.String()
+	case *Card:
+		return val.String()
 	case *nativeFn:
 		return "<native fn>"
 	default:

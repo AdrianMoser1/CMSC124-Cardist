@@ -180,7 +180,7 @@ func (p *Parser) primary() Expr {
 
 	// Added: Match identifiers (variable names) and store their lexeme string
 	if p.match(scanner.TOKEN_IDENTIFIER, scanner.TOKEN_DEAL, scanner.TOKEN_BLOCK, scanner.TOKEN_DRAW,
-		scanner.TOKEN_PLAYER, scanner.TOKEN_ENEMY) {
+		scanner.TOKEN_PLAYER, scanner.TOKEN_ENEMY, scanner.TOKEN_COST, scanner.TOKEN_BANISH) {
 		return &VariableExpr{Name: p.previous()}
 	}
 

@@ -5,40 +5,43 @@ import (
 	"math"
 )
 
-// Entity is something that can take damage and hold block. The player also
-// owns the piles draw() moves cards between.
-//
-// shortcut: piles are plain counts, not cards, and the starting stats are
-// fixed; upgrade both when `card` and `enemy` definition blocks exist.
-// shortcut: block never expires; upgrade when `turn` blocks exist.
+// Entity holds combat stats and owns its draw pile and hand.
 type Entity struct {
 	name       string
 	hp, block  float64
-	deck, hand float64
+	deck, hand []*Card
 }
 
 func (en *Entity) String() string {
 	return fmt.Sprintf("<%s hp=%s block=%s>", en.name, formatNumber(en.hp), formatNumber(en.block))
 }
 
-// defineCombatants makes `player` and `enemy` ordinary globals. The parser
-// accepts those two reserved words as names, so scripts can use them.
 func defineCombatants(globals *Environment) {
-	globals.Define("player", &Entity{name: "player", hp: 80, deck: 10})
-	globals.Define("enemy", &Entity{name: "enemy", hp: 40})
+	// shortcut: starting stats and deck are fixed, upgrade with definition blocks.
+	player := &Entity{name: "player", hp: 80, deck: starterDeck()}
+	enemy := &Entity{name: "enemy", hp: 40}
+	globals.Define("player", player)
+	globals.Define("enemy", enemy)
 }
 
-// combatArgs validates the (target, amount) pair every combat native takes.
-func (e *Evaluator) combatArgs(args []any) (*Entity, float64) {
-	target, ok := args[0].(*Entity)
+func (e *Evaluator) combatTarget(value any) *Entity {
+	target, ok := value.(*Entity)
 	if !ok {
 		panic(&RuntimeError{Token: e.callSite, Message: "Target must be the player or the enemy."})
 	}
-	amount, ok := args[1].(float64)
+	return target
+}
+
+func (e *Evaluator) combatWholeNumber(value any, label string) float64 {
+	amount, ok := value.(float64)
 	if !ok || amount < 0 || math.IsInf(amount, 0) || amount != math.Trunc(amount) {
-		panic(&RuntimeError{Token: e.callSite, Message: "Amount must be a whole number, zero or more."})
+		panic(&RuntimeError{Token: e.callSite, Message: label + " must be a whole number, zero or more."})
 	}
-	return target, amount
+	return amount
+}
+
+func (e *Evaluator) combatArgs(args []any) (*Entity, float64) {
+	return e.combatTarget(args[0]), e.combatWholeNumber(args[1], "Amount")
 }
 
 func init() {
@@ -62,15 +65,5 @@ func init() {
 		}
 		target.block = total
 		return total
-	}}
-
-	// draw(target, n) -> number: moves up to n cards from draw pile to hand.
-	// Returns how many moved, which is fewer than n when the pile runs short.
-	natives["draw"] = &nativeFn{arity: 2, fn: func(e *Evaluator, args []any) any {
-		target, amount := e.combatArgs(args)
-		moved := math.Min(target.deck, amount)
-		target.deck -= moved
-		target.hand += moved
-		return moved
 	}}
 }

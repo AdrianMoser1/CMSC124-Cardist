@@ -1,0 +1,16 @@
+print draw(player, 2); // expect: 2
+var first = hand(player, 0);
+var second = hand(player, 1);
+print first == second; // expect: false
+print cost(first); // expect: 1
+print banish(enemy, first); // expect: false
+print banish(player, first); // expect: true
+print hand(player, 0) == second; // expect: true
+print banish(player, first); // expect: false
+
+// A very large but finite request must drain only the remaining deck.
+var amount = 1;
+for (var i = 0; i < 30; i = i + 1) amount = amount * 10;
+print draw(player, amount); // expect: 8
+print hand(player, 8); // expect: <card Defend cost=1>
+print hand(player, 9); // expect: nil
