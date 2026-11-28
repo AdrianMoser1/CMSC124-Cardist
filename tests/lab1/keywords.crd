@@ -3,3 +3,4 @@ card energy cost enemy intent artifact elixir deal block apply draw banish turn 
 iffy variable energy_gained intent_next
 func print return for break continue effect
 function functional effectful
+switch case default

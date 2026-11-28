@@ -44,6 +44,8 @@ const (
 	TOKEN_ELSE
 	TOKEN_ELSEIF
 	TOKEN_SWITCH
+	TOKEN_CASE
+	TOKEN_DEFAULT
 	TOKEN_WHILE
 	TOKEN_TRUE
 	TOKEN_FALSE
@@ -137,6 +139,10 @@ func (t TokenType) String() string {
 		return "ELSEIF"
 	case TOKEN_SWITCH:
 		return "SWITCH"
+	case TOKEN_CASE:
+		return "CASE"
+	case TOKEN_DEFAULT:
+		return "DEFAULT"
 	case TOKEN_PRINT:
 		return "PRINT"
 	case TOKEN_RETURN:
@@ -299,6 +305,7 @@ var keywords = map[string]TokenType{
 	"print": TOKEN_PRINT, "return": TOKEN_RETURN, "for": TOKEN_FOR,
 	"func": TOKEN_FUNC, "break": TOKEN_BREAK, "continue": TOKEN_CONTINUE,
 	"elseif": TOKEN_ELSEIF, "switch": TOKEN_SWITCH, "effect": TOKEN_EFFECT,
+	"case": TOKEN_CASE, "default": TOKEN_DEFAULT,
 	"var": TOKEN_VAR, "if": TOKEN_IF, "else": TOKEN_ELSE, "while": TOKEN_WHILE,
 	"true": TOKEN_TRUE, "false": TOKEN_FALSE, "nil": TOKEN_NIL,
 	"and": TOKEN_AND, "or": TOKEN_OR,
@@ -327,7 +334,7 @@ func (s *Scanner) identifier() {
 		s.advance()
 	}
 	text := s.source[s.start:s.current] //final string of the identifier, to be checked against keywords table
-	if t, err := keywords[text]; err { //if the text is found in the keywords map, then it's a keyword
+	if t, err := keywords[text]; err {  //if the text is found in the keywords map, then it's a keyword
 		s.addToken(t)
 	} else {
 		s.addToken(TOKEN_IDENTIFIER)

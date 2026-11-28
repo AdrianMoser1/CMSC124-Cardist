@@ -2,7 +2,14 @@ package evaluator
 
 import (
 	"cardist/parser"
+	"cardist/scanner"
+	"errors"
 	"fmt"
+)
+
+var (
+	breakSignal    = errors.New("break")
+	continueSignal = errors.New("continue")
 )
 
 // ExecuteScript runs a file's statements in order; only print produces output.
@@ -73,10 +80,28 @@ func (e *Evaluator) execute(statement parser.Stmt) error {
 			if !e.isTruthy(condition) {
 				return nil
 			}
-			if err := e.execute(stmt.Body); err != nil {
+			switch err := e.execute(stmt.Body); err {
+			case breakSignal:
+				return nil
+			case nil, continueSignal:
+				if stmt.Increment != nil {
+					if _, err := e.Evaluate(stmt.Increment); err != nil {
+						return err
+					}
+				}
+			default:
 				return err
 			}
 		}
+
+	case *parser.ControlStmt:
+		if stmt.Keyword.Type == scanner.TOKEN_BREAK {
+			return breakSignal
+		}
+		return continueSignal
+
+	case *parser.SwitchStmt:
+		return e.executeSwitch(stmt)
 
 	case *parser.IfStmt:
 		condition, err := e.Evaluate(stmt.Condition)
@@ -101,6 +126,31 @@ func (e *Evaluator) execute(statement parser.Stmt) error {
 		return e.executeBlock(stmt.Statements, NewEnvironment(e.env))
 	}
 	return fmt.Errorf("Runtime error: unsupported statement type %T", statement)
+}
+
+func (e *Evaluator) executeSwitch(stmt *parser.SwitchStmt) error {
+	subject, err := e.Evaluate(stmt.Subject)
+	if err != nil {
+		return err
+	}
+	body := stmt.Default
+	for _, arm := range stmt.Cases {
+		value, err := e.Evaluate(arm.Value)
+		if err != nil {
+			return err
+		}
+		if e.isEqual(subject, value) {
+			body = arm.Body
+			break
+		}
+	}
+	if body == nil {
+		return nil
+	}
+	if err := e.execute(body); err != breakSignal {
+		return err
+	}
+	return nil
 }
 
 func (e *Evaluator) executeBlock(statements []parser.Stmt, blockEnv *Environment) error {

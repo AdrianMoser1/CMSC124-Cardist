@@ -30,7 +30,7 @@ var e;
 for (e = 7; e < 9; e = e + 1) print e; // expect: 7
                                        // expect: 8
 
-// Empty condition means true. No break yet, so a runtime error ends the loop.
+// Empty condition means true. A runtime error in the body ends the loop.
 // Keep this last: the error stops the file.
 for (var n = 0;; n = n + 1) {
     print n; // expect: 0

@@ -1,0 +1,6 @@
+while (true) {
+    func invalid() {
+        break; // expect error: Can't use 'break' outside a loop or switch.
+    }
+    break;
+}

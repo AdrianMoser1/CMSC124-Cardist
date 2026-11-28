@@ -41,7 +41,11 @@ func (p *Parser) funDeclaration() Stmt {
 	if _, err := p.consume(scanner.TOKEN_LEFT_BRACE, "Expect '{' before function body."); err != nil {
 		return nil
 	}
+	// A nested function can't jump to a loop or switch enclosing its declaration.
+	loopDepth, switchDepth := p.loopDepth, p.switchDepth
+	p.loopDepth, p.switchDepth = 0, 0
 	body := p.block()
+	p.loopDepth, p.switchDepth = loopDepth, switchDepth
 	if p.panicMode {
 		return nil
 	}
