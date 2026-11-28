@@ -112,9 +112,9 @@ func runParseFile(path string) {
 		os.Exit(65)
 	}
 
-	printer := parser.NewAstPrinter()
-	if out := printer.Print(program); out != "" {
-		fmt.Println(out)
+	// A string literal can render as an empty line, even when the program has an expression.
+	if len(program.Expressions) > 0 {
+		fmt.Println(parser.NewAstPrinter().Print(program))
 	}
 	os.Exit(0)
 }
