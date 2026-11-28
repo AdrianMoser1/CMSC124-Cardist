@@ -32,6 +32,9 @@ type Evaluator struct {
 	// callSite is the `(` of the call being made, so natives can report
 	// runtime errors on the correct line.
 	callSite scanner.Token
+
+	combatants [2]*Entity
+	turnEnergy *float64
 }
 
 func NewEvaluator() *Evaluator {
@@ -39,8 +42,7 @@ func NewEvaluator() *Evaluator {
 	for name, fn := range natives {
 		globals.Define(name, fn)
 	}
-	defineCombatants(globals)
-	return &Evaluator{env: globals}
+	return &Evaluator{env: globals, combatants: defineCombatants(globals)}
 }
 
 // Main evaluation entry point

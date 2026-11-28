@@ -103,6 +103,9 @@ func (e *Evaluator) execute(statement parser.Stmt) error {
 	case *parser.SwitchStmt:
 		return e.executeSwitch(stmt)
 
+	case *parser.TurnStmt:
+		return e.executeTurn(stmt)
+
 	case *parser.IfStmt:
 		condition, err := e.Evaluate(stmt.Condition)
 		if err != nil {

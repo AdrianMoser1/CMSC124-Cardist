@@ -16,12 +16,13 @@ func (en *Entity) String() string {
 	return fmt.Sprintf("<%s hp=%s block=%s>", en.name, formatNumber(en.hp), formatNumber(en.block))
 }
 
-func defineCombatants(globals *Environment) {
+func defineCombatants(globals *Environment) [2]*Entity {
 	// shortcut: starting stats and deck are fixed, upgrade with definition blocks.
 	player := &Entity{name: "player", hp: 80, deck: starterDeck()}
 	enemy := &Entity{name: "enemy", hp: 40}
 	globals.Define("player", player)
 	globals.Define("enemy", enemy)
+	return [2]*Entity{player, enemy}
 }
 
 func (e *Evaluator) combatTarget(value any) *Entity {

@@ -88,6 +88,9 @@ func (p *Parser) statement() Stmt {
 	if p.match(scanner.TOKEN_BREAK, scanner.TOKEN_CONTINUE) {
 		return p.controlStatement()
 	}
+	if p.match(scanner.TOKEN_TURN) {
+		return p.turnStatement()
+	}
 	if p.match(scanner.TOKEN_PRINT) {
 		return p.printStatement()
 	}
