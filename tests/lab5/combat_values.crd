@@ -1,0 +1,16 @@
+// The combat natives are ordinary values, so they work inside functions
+// and through variables.
+func strike(t) { deal(t, 6); }
+strike(enemy);
+print enemy; // expect: <enemy hp=34 block=0>
+
+var d = deal;
+print d(enemy, 4); // expect: 4
+print d;           // expect: <native fn>
+
+func twice(f, t, n) {
+    f(t, n);
+    f(t, n);
+}
+twice(block, player, 3);
+print player; // expect: <player hp=80 block=6>

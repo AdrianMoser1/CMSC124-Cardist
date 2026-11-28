@@ -1,0 +1,28 @@
+var name = "outer";
+turn {
+  var name = "turn";
+  print name; // expect: turn
+  print energy(); // expect: 3
+  draw(player, 1);
+  print spend(cost(hand(player, 0))); // expect: true
+  print spend(3); // expect: false
+  print energy(); // expect: 2
+  block(enemy, 5);
+  block(player, 6);
+}
+print name; // expect: outer
+print enemy; // expect: <enemy hp=40 block=0>
+print player; // expect: <player hp=80 block=0>
+
+var actualEnemy = enemy;
+enemy = player;
+func endEarly() {
+  turn {
+    print energy(); // expect: 3
+    block(actualEnemy, 7);
+    return spend(3);
+  }
+}
+print endEarly(); // expect: true
+print actualEnemy; // expect: <enemy hp=40 block=0>
+turn { print energy(); } // expect: 3

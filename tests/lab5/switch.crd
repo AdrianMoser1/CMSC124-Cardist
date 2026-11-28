@@ -1,0 +1,47 @@
+var count = 0;
+var name = "outer";
+func subject() {
+    count = count + 1;
+    return "chosen";
+}
+
+switch (subject()) {
+    default: print "unexpected default";
+    case "chosen":
+        var name = "arm";
+        print name; // expect: arm
+    case missing: print "should not evaluate this case";
+}
+print count; // expect: 1
+print name;  // expect: outer
+
+switch (1) {
+    case "1": print "wrong type";
+    case 2: print "wrong value";
+    default: print "fallback"; // expect: fallback
+}
+switch (nil) {
+    case false: print "wrong value";
+}
+
+for (var i = 0; i < 3; i = i + 1) {
+    switch (i) {
+        case 0:
+            break;
+            print "unreachable";
+        case 1: continue;
+        default: print "last";
+    }
+    print i;
+}
+// expect: 0
+// expect: last
+// expect: 2
+
+func result() {
+    switch (true) {
+        case true: return "from case";
+    }
+    return "unreachable";
+}
+print result(); // expect: from case

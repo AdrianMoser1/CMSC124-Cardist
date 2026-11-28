@@ -42,10 +42,8 @@ func (p *Parser) declaration() Stmt {
 
 	if p.panicMode {
 		p.synchronize()
-		// synchronize() always consumes a token, but make progress certain
-		// here too: ParseScript and block() loop on declaration(), so a
-		// declaration that consumed nothing would hang until the harness's
-		// 15-second timeout.
+		// Recovery can leave a delimiter for its caller. If the failed
+		// declaration did not consume anything, advance to avoid a loop.
 		if p.current == start && !p.isAtEnd() {
 			p.advance()
 		}
@@ -83,6 +81,15 @@ func (p *Parser) statement() Stmt {
 	}
 	if p.match(scanner.TOKEN_FOR) {
 		return p.forStatement()
+	}
+	if p.match(scanner.TOKEN_SWITCH) {
+		return p.switchStatement()
+	}
+	if p.match(scanner.TOKEN_BREAK, scanner.TOKEN_CONTINUE) {
+		return p.controlStatement()
+	}
+	if p.match(scanner.TOKEN_TURN) {
+		return p.turnStatement()
 	}
 	if p.match(scanner.TOKEN_PRINT) {
 		return p.printStatement()

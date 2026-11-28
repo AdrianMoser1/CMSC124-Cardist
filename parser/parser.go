@@ -18,7 +18,8 @@ type Parser struct {
 	panicMode bool
 	// blockDepth is how many '{' are open. synchronize() uses it to leave a
 	// '}' for the enclosing block instead of swallowing it.
-	blockDepth int
+	blockDepth             int
+	loopDepth, switchDepth int
 }
 
 func NewParser(tokens []scanner.Token) *Parser {
@@ -178,7 +179,8 @@ func (p *Parser) primary() Expr {
 	}
 
 	// Added: Match identifiers (variable names) and store their lexeme string
-	if p.match(scanner.TOKEN_IDENTIFIER) {
+	if p.match(scanner.TOKEN_IDENTIFIER, scanner.TOKEN_DEAL, scanner.TOKEN_BLOCK, scanner.TOKEN_DRAW,
+		scanner.TOKEN_PLAYER, scanner.TOKEN_ENEMY, scanner.TOKEN_ENERGY, scanner.TOKEN_COST, scanner.TOKEN_BANISH) {
 		return &VariableExpr{Name: p.previous()}
 	}
 
@@ -278,6 +280,7 @@ func (p *Parser) synchronize() {
 		switch p.peek().Type {
 		case scanner.TOKEN_VAR, scanner.TOKEN_IF, scanner.TOKEN_ELSEIF, scanner.TOKEN_ELSE,
 			scanner.TOKEN_SWITCH, scanner.TOKEN_WHILE, scanner.TOKEN_PRINT, scanner.TOKEN_RETURN,
+			scanner.TOKEN_BREAK, scanner.TOKEN_CONTINUE,
 			scanner.TOKEN_FOR, scanner.TOKEN_FUNC, scanner.TOKEN_CARD, scanner.TOKEN_ENEMY,
 			scanner.TOKEN_ARTIFACT, scanner.TOKEN_ELIXIR, scanner.TOKEN_TURN,
 			scanner.TOKEN_LEFT_BRACE:

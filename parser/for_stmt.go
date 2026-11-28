@@ -9,7 +9,7 @@ import "cardist/scanner"
 // There is no ForStmt node. It is desugared right here into nodes that already
 // exist, so the evaluator needs no `for` case:
 //
-//	for (init; cond; incr) body   =>   { init; while (cond) { body; incr; } }
+// The increment stays on the desugared while so continue runs it and break skips it.
 func (p *Parser) forStatement() Stmt {
 	if _, err := p.consume(scanner.TOKEN_LEFT_PAREN, "Expect '(' after 'for'."); err != nil {
 		return nil
@@ -52,19 +52,15 @@ func (p *Parser) forStatement() Stmt {
 		return nil
 	}
 
-	body := p.statement()
+	body := p.loopBody()
 	if p.panicMode {
 		return nil
 	}
 
-	// Build inside-out. Each step wraps the one before it.
-	if increment != nil {
-		body = &BlockStmt{Statements: []Stmt{body, &ExpressionStmt{Expression: increment}}}
-	}
 	if condition == nil {
 		condition = &LiteralExpr{Value: true} // for (;;) loops forever
 	}
-	body = &WhileStmt{Condition: condition, Body: body}
+	body = &WhileStmt{Condition: condition, Body: body, Increment: increment}
 	if initializer != nil {
 		// Outer block: keeps the loop variable from leaking past the loop.
 		body = &BlockStmt{Statements: []Stmt{initializer, body}}

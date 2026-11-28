@@ -1,0 +1,4 @@
+switch (nil) {
+    default: print "first";
+    default: print "second"; // expect error: A switch can have only one default.
+}

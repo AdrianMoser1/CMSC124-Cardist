@@ -1,0 +1,10 @@
+print block(player, 5); // expect: 5
+print block(player, 3); // expect: 8
+
+// Block soaks damage first: 6 of the 8 block is used, no HP lost.
+print deal(player, 6); // expect: 0
+print player;          // expect: <player hp=80 block=2>
+
+// 2 block left, so 10 damage takes 2 from block and 8 from HP.
+print deal(player, 10); // expect: 8
+print player;           // expect: <player hp=72 block=0>

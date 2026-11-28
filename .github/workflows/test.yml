@@ -38,6 +38,9 @@ jobs:
     - name: Run Lab 2 Tests
       run: python3 run_tests.py tests/lab2
 
+    - name: Verify Empty String Parse Output
+      run: bash tests/parse_empty_string.sh
+
     - name: Run Lab 3 Tests
       run: python3 run_tests.py tests/lab3
 

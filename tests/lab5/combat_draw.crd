@@ -1,0 +1,10 @@
+print draw(player, 3); // expect: 3
+print draw(player, 4); // expect: 4
+
+// 3 cards left in the pile, so asking for 5 moves only 3.
+print draw(player, 5); // expect: 3
+print draw(player, 1); // expect: 0
+print hand(player, 0); // expect: <card Strike cost=1>
+print hand(player, 9); // expect: <card Defend cost=1>
+print hand(player, 10); // expect: nil
+print hand(enemy, 0); // expect: nil

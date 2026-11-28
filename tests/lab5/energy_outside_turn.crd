@@ -1,0 +1,1 @@
+energy(); // expect runtime error: Energy is only available during a turn.

@@ -7,22 +7,22 @@ import "time"
 // arity and "not callable" once for both kinds.
 type nativeFn struct {
 	arity int
-	fn    func(args []any) any
+	fn    func(e *Evaluator, args []any) any
 }
 
 func (n *nativeFn) Arity() int { return n.arity }
 
-func (n *nativeFn) Call(_ *Evaluator, args []any) any { return n.fn(args) }
+func (n *nativeFn) Call(e *Evaluator, args []any) any { return n.fn(e, args) }
 
 // natives is the table NewEvaluator copies into the global environment.
-// Adding a native later = one more entry here.
+// Adding a native later = one more entry (combat.go adds its own in init).
 var natives = map[string]*nativeFn{
 	// clock() -> number: wall-clock seconds. Only compare two readings in tests.
-	"clock": {arity: 0, fn: func([]any) any {
+	"clock": {arity: 0, fn: func(*Evaluator, []any) any {
 		return float64(time.Now().UnixNano()) / 1e9
 	}},
 	// str(x) -> string: the same text print would show, via FormatValue.
-	"str": {arity: 1, fn: func(args []any) any {
+	"str": {arity: 1, fn: func(_ *Evaluator, args []any) any {
 		return FormatValue(args[0])
 	}},
 }

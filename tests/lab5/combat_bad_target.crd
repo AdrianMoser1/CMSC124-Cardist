@@ -1,0 +1,1 @@
+deal(5, 1); // expect runtime error: Target must be the player or the enemy.
